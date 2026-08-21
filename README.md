@@ -91,4 +91,4 @@ We can generate messy Aussie retail-like data, clean it into a clear transaction
 
 ## Next
 
-Detail the data architecture (raw → cleaned → reporting tables) once this business context stays stable.
+See **[docs/data-understanding.md](docs/data-understanding.md)** for bronze schemas, bronze→fact/dim transform plan, and the gold crow’s foot ERD (before code).
