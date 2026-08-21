@@ -1,76 +1,94 @@
 # ausie-retail-reporting
 
-Automation of end-of-day sales reporting for Australian retailers.
+Synthetic Australian retail sales data project: build a realistic multi-store dataset, clean it, and model it for reporting (owner / accountant style views).
 
 ## Business context
 
-Many Australian retailers run multiple stores but do not have a data engineer. End-of-day reporting is still mostly manual: closing staff take a photo of the till/POS close report, and owners or accountants later copy numbers into spreadsheets and check cash variance by hand.
+Australian specialty retailers often sell both **in store** and **online**. They have many locations, thousands of products, staff on registers, discounts, and returns — but they rarely have a data engineer. Numbers live in POS, product master (ERP), and sometimes a customer/loyalty system, and they do not line up cleanly.
 
-**Who it is for**
+This project simulates **one mid-size Australian omnichannel specialty retailer** so we can practice a real data solution without needing a live retailer feed.
 
-- One retailer with multiple stores (first use case: about 5 stores)
-- Primary consumers: **owner** and **accountant**
-- Submitters: **closing staff** send the end-of-day photo
+**Who it is for (demo / portfolio scenario)**
 
-**What an end-of-day report covers**
+- One retailer, many locations
+- Consumers of the data: **owner** and **accountant** (revenue, margin, store vs online, product, staff)
+- Not a live photo-upload product anymore — first goal is a **credible synthetic dataset + data model**
 
-Typical Australian retail close-out fields:
+**Business shape we simulate**
 
-- Sales / revenue
-- Cash (POS expected vs actual counted)
-- Categories
-- Staff
-- Refunds
+- About **50 stores** across NSW, VIC, QLD, WA, SA
+- Plus an **online** channel (Shopify-style)
+- About **8,000 products (SKUs)**
+- About **24 months** of sales history
+- Australian retail calendar effects (e.g. summer peak Dec–Jan, Boxing Day, EOFY, Click Frenzy, Black Friday, back-to-school)
 
-Input is normally a **photo**. Report layout is expected to be the **same across stores**.
+**What “sales” means here**
 
-**Cash variance**
+We model sales as **transactions** (line items), not only a daily photo total:
 
-- Compare POS expected cash with actual cash
-- Flag as a problem when the difference is **over A$10**
-- Goal: immediate cross-check so inefficiency or errors are visible the same day
+- Revenue
+- Product cost
+- Discount
+- Product, staff, location (and related IDs)
 
-**Time scope (v1)**
+Around that we keep **dimension**-style reference data that mirrors basic Aussie retail:
 
-- Same-day view across stores (week/month rollups later)
+- **Staff** — name and related info (e.g. role, rating)
+- **Location** — store vs online, state, etc.
+- **Product** — SKU, category hierarchy, costs/prices
+- Other basics as needed (date, customer/loyalty later)
+
+**Why the raw data is messy on purpose**
+
+Real retail feeds are dirty. Our synthetic data should include problems such as:
+
+- Duplicate transactions when POS retries a send
+- GST-inclusive POS prices vs ex-GST product master
+- Different timezones (east coast vs Perth) with local times and no clear offset
+- Some store files arriving late (days later)
+- Guest checkout with no customer id; loyalty duplicates (same email, different casing)
+- Returns as negative lines linked to an original sale (sometimes in another period)
+- Product categories changing mid-year
+- Inconsistent state names/codes and postcode mismatches
+
+Cleaning and organising that mess is the point of the data solution.
 
 ## Why a data solution is required
 
-- Inputs are photos, not structured data
-- The same process repeats every day across multiple stores
-- Manual copy/paste and cash checks do not scale and are easy to get wrong
-- Owners and accountants need one trusted view, not a pile of store photos
+- Multiple systems (POS, product master, CRM/online) do not share one clean truth
+- Store + online must be comparable in one place
+- History, returns, discounts, and product changes break simple spreadsheets
+- Owners/accountants need trusted dims + transaction facts, not raw exports
 
-This product turns multi-store end-of-day photos into trusted same-day numbers and variance flags — without hiring a data team.
-
-## Definition of done (v1 requirements)
+## Definition of done (current scope)
 
 ### Must have
 
-1. Closing staff can submit an EOD **photo** tagged to a **store**
-2. Core fields are captured: **sales, cash (expected + actual), categories, staff, refunds**
-3. About **5 stores** appear in one **same-day** view for owner/accountant
-4. **Cash variance** is calculated; differences **over A$10** are clearly flagged
-5. Owner/accountant can see same-day **sales/revenue by store** and by **category** (SKU/product-level later)
-6. A human can spot-check that dashboard numbers match the photo closely enough to trust
+1. Synthetic data for the retailer scenario above (stores + online, ~8k SKUs, ~24 months)
+2. Raw layer that keeps the messy source-style data
+3. Cleaned layer that fixes the deliberate problems (dedupe, GST, time, late data, customer matching, returns, category history, location codes)
+4. Reporting model with:
+   - a **fact** of sales transactions (revenue, cost, discount, quantities, foreign keys)
+   - **dimensions** for staff, location, product (and date at minimum)
+5. Enough structure that an owner/accountant style dashboard *could* sit on top later
 
-### Nice later (not v1)
+### Nice later
 
-- Product/SKU-level revenue
-- Week/month accountant packs
-- Multi-retailer / SaaS for many brands
-- Full automation with zero human review
+- Live photo / EOD intake for store close
+- Cash variance checks (e.g. flag over A$10)
+- Full multi-retailer SaaS
+- Week/month accountant packs as polished products
 
 ### Out of scope for now
 
-- Replacing the POS
-- Payroll, rostering, inventory purchasing
-- Forecasting or AI insights beyond extraction + variance
+- Replacing POS / ERP / Shopify
+- Payroll, rostering, inventory purchasing systems
+- Fancy forecasting as the main goal
 
 ### Done when
 
-For one trading day with ~5 stores: photos in → same-day dashboard out → variances over A$10 visible → owner/accountant does not need to retype the reports.
+We can generate messy Aussie retail-like data, clean it into a clear transaction fact + retail dimensions, and explain how owner/accountant reporting would read from that model.
 
 ## Next
 
-Data architecture (intake → extract → store → dashboard) will be defined after this context and DoD stay stable.
+Detail the data architecture (raw → cleaned → reporting tables) once this business context stays stable.
