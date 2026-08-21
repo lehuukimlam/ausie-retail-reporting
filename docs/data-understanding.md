@@ -12,17 +12,20 @@ Layers in plain words:
 
 ---
 
-## 1. Bronze sources (what we synthesise)
+## 1. Bronze sources (what lands raw)
 
-We fake four source systems (plus a simple store list):
+Bronze is the **raw landing** of transactional extracts. Upstream OLTP is **MySQL** (tables seeded with synthetic / AI-generated dirty Aussie retail data when we do not have a live retailer).
+
+Source domains in MySQL (then extracted to DuckDB bronze):
 
 1. **POS** — in-store sales lines (GST-inclusive prices, local timestamps, retries/duplicates)
 2. **ERP product master** — products (ex-GST cost/price, hierarchy that changes over time)
 3. **CRM** — loyalty customers (near-duplicate emails, casing issues)
 4. **Online (Shopify-style)** — web orders + lines (guest checkout → null customer)
 5. **Store directory** — store attributes (messy state codes; includes online as a channel)
+6. **Staff** — HR/POS staff versions (role/position changes over time)
 
-AI / generators create these files with the deliberate dirt listed in the README.
+Generators may populate MySQL; **DLT** loads MySQL → DuckDB bronze.
 
 ---
 
