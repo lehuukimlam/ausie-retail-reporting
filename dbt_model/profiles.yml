@@ -1,0 +1,7 @@
+ausie_retail:
+  target: dev
+  outputs:
+    dev:
+      type: duckdb
+      path: ../duckdb_warehouse/warehouse.duckdb
+      threads: 4
