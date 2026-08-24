@@ -81,6 +81,8 @@ flowchart TD
 
 ```text
 ausie-retail-reporting/
+├── mysql/                     # OLTP DDL (Workbench / mysql client)
+│   └── ddl.sql
 ├── ingestion/                 # DLT: MySQL → DuckDB bronze
 ├── orchestration/             # ingest + dbt (+ later charts)
 ├── dbt_model/                 # bronze / silver / gold SQL
