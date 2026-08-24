@@ -1,0 +1,11 @@
+# Core warehouse stack (MySQL → DLT → DuckDB → dbt)
+dlt[duckdb,sql_database]>=1.0.0
+dbt-duckdb>=1.8.0
+duckdb>=1.1.0
+pymysql>=1.1.0
+sqlalchemy>=2.0.0
+python-dotenv>=1.0.0
+
+# Code quality
+black>=24.0.0
+sqlfluff>=3.0.0

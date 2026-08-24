@@ -1,0 +1,15 @@
+version: 2
+
+sources:
+  - name: mysql_oltp
+    schema: raw
+    description: DLT landings from MySQL (replace each run for now)
+    tables:
+      - name: store
+      - name: staff
+      - name: product
+      - name: customer
+      - name: sales_header
+      - name: sales_line
+      - name: online_order_header
+      - name: online_order_line

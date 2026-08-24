@@ -1,0 +1,17 @@
+name: ausie_retail
+version: "1.0.0"
+profile: ausie_retail
+model-paths: ["models"]
+clean-targets: ["target", "dbt_packages"]
+
+models:
+  ausie_retail:
+    bronze:
+      +schema: bronze
+      +materialized: view
+    silver:
+      +schema: silver
+      +materialized: view
+    gold:
+      +schema: gold
+      +materialized: table
