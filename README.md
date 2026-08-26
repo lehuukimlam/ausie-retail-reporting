@@ -92,4 +92,5 @@ We can generate messy Aussie retail-like data, clean it into a clear transaction
 ## Next
 
 1. **[docs/data-understanding.md](docs/data-understanding.md)** — bronze schemas, transform plan, gold crow’s foot ERD  
-2. **[docs/data-architecture-stack.md](docs/data-architecture-stack.md)** — stack: MySQL OLTP → DLT → DuckDB → dbt (bronze / silver / gold)
+2. **[docs/data-architecture-stack.md](docs/data-architecture-stack.md)** — stack: MySQL OLTP → DLT → DuckDB → dbt (bronze / silver / gold)  
+3. **[docs/data-transformation.md](docs/data-transformation.md)** — cleaning + gold + tests in business terms; dbt docs UI
