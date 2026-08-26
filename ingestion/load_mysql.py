@@ -3,6 +3,7 @@
 from pathlib import Path
 
 from dotenv import load_dotenv
+from urllib.parse import quote_plus
 import os
 import dlt
 from dlt.sources.sql_database import sql_database
@@ -23,8 +24,8 @@ OLTP_TABLES = [
 
 
 def mysql_url() -> str:
-    user = os.environ["MYSQL_USER"]
-    password = os.environ["MYSQL_PASSWORD"]
+    user = quote_plus(os.environ["MYSQL_USER"])
+    password = quote_plus(os.environ["MYSQL_PASSWORD"])
     host = os.environ.get("MYSQL_HOST", "127.0.0.1")
     port = os.environ.get("MYSQL_PORT", "3306")
     database = os.environ.get("MYSQL_DATABASE", "ausie_retail_oltp")
