@@ -12,5 +12,6 @@ logs/
 dbt_model/target/
 dbt_model/dbt_packages/
 dbt_model/logs/
+dbt_model/.user.yml
 .pytest_cache/
 .mypy_cache/
