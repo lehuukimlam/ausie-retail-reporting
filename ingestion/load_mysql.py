@@ -1,4 +1,16 @@
-"""DLT: MySQL OLTP -> DuckDB schema `raw` (then dbt bronze reads `raw`)."""
+"""
+Copy retail tables from MySQL into DuckDB (raw landing area).
+
+What this does:
+  Connects to the MySQL database using settings in .env, then loads the
+  listed tables into DuckDB under the `raw` schema. dbt bronze models
+  read from that raw copy next.
+
+How to run (venv on, from the project folder):
+  python ingestion/load_mysql.py
+
+Usually this runs as step 1 of orchestration/run_pipeline.py.
+"""
 
 from pathlib import Path
 
