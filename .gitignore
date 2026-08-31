@@ -15,3 +15,5 @@ dbt_model/logs/
 dbt_model/.user.yml
 .pytest_cache/
 .mypy_cache/
+powerbi/export/*.parquet
+powerbi/*.pbix

@@ -1,21 +1,23 @@
 """
-Orchestrator: run the full warehouse pipeline in order.
+Pipeline runner: refresh the warehouse and Power BI files in one go.
 
-Business meaning:
-  One "daily run" for the data team — land OLTP data, rebuild bronze/silver/gold,
-  then fail if gold quality tests break (so BI does not refresh on bad data).
+What this does (in order):
+  1. Copy store systems data from MySQL into DuckDB (DLT)
+  2. Rebuild bronze, silver, and gold tables (dbt)
+  3. Run gold quality checks (dbt test) — stops if checks fail
+  4. Export gold tables to Parquet so Power BI can refresh
 
-Steps:
-  1) DLT  — MySQL → DuckDB `raw`
-  2) dbt run  — bronze → silver → gold
-  3) dbt test — gold PK / FK / channel checks
+When to run:
+  Once a day after trading, or earlier if you need a mid-day refresh.
+  Schedule this script (Windows Task Scheduler or similar) as needed.
 
-Usage (venv on, from repo root):
+How to run (venv on, from the project folder):
   python orchestration/run_pipeline.py
 
-Optional skip flags:
-  python orchestration/run_pipeline.py --skip-ingest
-  python orchestration/run_pipeline.py --skip-test
+Optional:
+  --skip-ingest   skip MySQL copy (only rebuild models + export)
+  --skip-test     skip quality checks (not recommended)
+  --skip-export   skip Power BI Parquet export
 """
 
 from __future__ import annotations
@@ -29,6 +31,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 DBT_DIR = ROOT / "dbt_model"
 INGEST_SCRIPT = ROOT / "ingestion" / "load_mysql.py"
+EXPORT_SCRIPT = ROOT / "powerbi" / "export_for_pbi.py"
 
 
 def log(msg: str) -> None:
@@ -47,46 +50,71 @@ def run_step(name: str, cmd: list[str], cwd: Path) -> None:
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Ausie retail: ingest → dbt → test")
+    parser = argparse.ArgumentParser(
+        description="Refresh warehouse and Power BI export files"
+    )
     parser.add_argument(
         "--skip-ingest",
         action="store_true",
-        help="Skip DLT MySQL→DuckDB (only dbt run/test)",
+        help="Skip copying MySQL into DuckDB",
     )
     parser.add_argument(
         "--skip-test",
         action="store_true",
-        help="Skip dbt test (not recommended for prod-like runs)",
+        help="Skip gold quality checks",
+    )
+    parser.add_argument(
+        "--skip-export",
+        action="store_true",
+        help="Skip writing Parquet files for Power BI",
     )
     args = parser.parse_args()
 
     python = sys.executable
     log("Pipeline start")
-    log(f"Repo root: {ROOT}")
+    log(f"Project folder: {ROOT}")
 
     if not args.skip_ingest:
         run_step(
-            "DLT ingest (MySQL → DuckDB raw)",
+            "Copy MySQL data into DuckDB",
             [python, str(INGEST_SCRIPT)],
             cwd=ROOT,
         )
     else:
-        log("SKIP: ingest")
+        log("SKIP: MySQL copy")
 
     run_step(
-        "dbt run (bronze → silver → gold)",
+        "Rebuild bronze, silver, and gold",
         [python, "-m", "dbt", "run", "--profiles-dir", "."],
         cwd=DBT_DIR,
     )
 
     if not args.skip_test:
         run_step(
-            "dbt test (gold quality)",
-            [python, "-m", "dbt", "test", "--select", "path:models/gold", "--profiles-dir", "."],
+            "Run gold quality checks",
+            [
+                python,
+                "-m",
+                "dbt",
+                "test",
+                "--select",
+                "path:models/gold",
+                "--profiles-dir",
+                ".",
+            ],
             cwd=DBT_DIR,
         )
     else:
-        log("SKIP: dbt test")
+        log("SKIP: quality checks")
+
+    if not args.skip_export:
+        run_step(
+            "Export reporting tables for Power BI",
+            [python, str(EXPORT_SCRIPT)],
+            cwd=ROOT,
+        )
+    else:
+        log("SKIP: Power BI export")
 
     log("Pipeline SUCCESS")
 
