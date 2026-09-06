@@ -23,10 +23,9 @@ from dotenv import load_dotenv
 from text2sql.schema import build_schema_prompt
 
 ROOT = Path(__file__).resolve().parents[1]
-load_dotenv(ROOT / ".env")
 
 # Fast free-tier friendly model; change in .env if needed
-DEFAULT_MODEL = os.environ.get("GEMINI_MODEL", "gemini-3.6-flash")
+DEFAULT_MODEL = "gemini-3.6-flash"
 
 
 def _strip_sql_fence(text: str) -> str:
@@ -38,8 +37,16 @@ def _strip_sql_fence(text: str) -> str:
     return cleaned.strip().rstrip(";")
 
 
-def generate_sql(question: str) -> str:
+def _load_settings() -> tuple[str, str]:
+    """Read key + model from .env each call (override stale process env / Streamlit cache)."""
+    load_dotenv(ROOT / ".env", override=True)
     api_key = os.environ.get("GEMINI_API_KEY", "").strip()
+    model = (os.environ.get("GEMINI_MODEL") or DEFAULT_MODEL).strip()
+    return api_key, model
+
+
+def generate_sql(question: str) -> str:
+    api_key, model = _load_settings()
     if not api_key:
         raise RuntimeError(
             "Missing GEMINI_API_KEY in .env. "
@@ -57,7 +64,7 @@ def generate_sql(question: str) -> str:
 
     client = genai.Client(api_key=api_key)
     response = client.models.generate_content(
-        model=DEFAULT_MODEL,
+        model=model,
         contents=prompt,
     )
     if not response.text:
