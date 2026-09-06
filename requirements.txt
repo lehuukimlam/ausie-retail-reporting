@@ -8,6 +8,7 @@ python-dotenv>=1.0.0
 
 # Text-to-SQL (gold layer questions)
 google-genai>=1.0.0
+streamlit>=1.28.0
 
 # Code quality
 black>=24.0.0
