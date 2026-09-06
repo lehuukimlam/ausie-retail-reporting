@@ -38,6 +38,10 @@ SUGGESTIONS = [
 ]
 
 
+def _use_suggestion(text: str) -> None:
+    st.session_state["question"] = text
+
+
 def main() -> None:
     st.set_page_config(page_title="Ask retail data", page_icon="📊", layout="wide")
     st.title("Ask your retail data")
@@ -46,16 +50,23 @@ def main() -> None:
         "Same numbers as Power BI. Read-only — nothing is changed."
     )
 
+    if "question" not in st.session_state:
+        st.session_state["question"] = ""
+
     st.subheader("Try a question")
     cols = st.columns(len(SUGGESTIONS))
-    picked = None
     for i, suggestion in enumerate(SUGGESTIONS):
-        if cols[i].button(suggestion, use_container_width=True):
-            picked = suggestion
+        cols[i].button(
+            suggestion,
+            key=f"suggest_{i}",
+            use_container_width=True,
+            on_click=_use_suggestion,
+            args=(suggestion,),
+        )
 
-    question = st.text_input(
+    st.text_input(
         "Your question",
-        value=picked or "",
+        key="question",
         placeholder="e.g. Which store had the highest revenue?",
     )
     show_sql = st.checkbox("Show SQL", value=False)
@@ -64,7 +75,7 @@ def main() -> None:
     if not ask:
         return
 
-    q = (picked or question).strip()
+    q = str(st.session_state.get("question", "")).strip()
     if not q:
         st.warning("Type a question or click a suggestion.")
         return
