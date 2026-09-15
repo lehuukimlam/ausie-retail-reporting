@@ -137,15 +137,6 @@ dbt test --select path:models/gold --profiles-dir .
 
 ---
 
-## 7. What’s next (not today)
-
-- Scale generators (~50 stores / ~8k SKUs / 24 months) once this pipe stays trusted  
-- More silver dirt (late files, POS retry duplicates in bronze)  
-- Richer retail calendar flags  
-- Dashboard / charts on gold  
-
----
-
 ## Session checkpoint
 
 | Done | Status |
