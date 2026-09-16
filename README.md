@@ -123,7 +123,7 @@ These use cases are the stakeholder-facing outcomes of the requirements above.
 
 | Use case | Who | What they do | Requirements met |
 |----------|-----|--------------|------------------|
-| **UC1 — Trusted daily refresh** | Data / ops | Run one pipeline that copies shop systems data, rebuilds cleaned + reporting tables, fails if gold checks fail, and refreshes export files | R2, R3, R4, R6 |
+| **UC1 — Trusted daily refresh** | Data / ops | Run incremental sync when new shop data arrives: merge into DuckDB, rebuild gold, fail if checks fail, refresh Parquet | R2, R3, R4, R6 |
 | **UC2 — Owner performance view** | Owner | Open Power BI on gold: revenue by store, channel, product, period; compare store vs online | R4, R5, R7 |
 | **UC3 — Accountant / finance view** | Accountant | Same gold model: revenue, cost, discount, returns, GST-related fields, consistent dims | R3, R4, R7 |
 | **UC4 — Ad-hoc ask-your-data** | Analyst (optional for owner) | Ask plain-English questions in the Streamlit app; answers come from **gold only**, same numbers as Power BI, read-only | R4, R8 |
@@ -168,14 +168,21 @@ Power BI and text-to-SQL both read **gold**, so figures stay aligned.
 1. Configure local `.env` from `.env.example` (MySQL, DuckDB path, optional Gemini key for text-to-SQL).
 2. Create and seed MySQL (`mysql/ddl.sql`, `mysql/seed.sql`).
 3. Install Python deps (`requirements.txt`) and activate the project venv.
-4. Refresh the warehouse and Power BI files:
+4. First-time full load (or rebuild):
 
    ```bat
    python orchestration\run_pipeline.py
    ```
 
-5. Open Power BI against `powerbi/export/*.parquet`.
-6. Optional — ask gold questions in the browser:
+5. When new trading data arrives — generate a short span (e.g. 3 days) then **incremental sync** only:
+
+   ```bat
+   python synthetic\generate_trading_days.py --days 3
+   python orchestration\run_incremental.py
+   ```
+
+6. Open Power BI against `powerbi/export/*.parquet`.
+7. Optional — ask gold questions in the browser:
 
    ```bat
    streamlit run text2sql\app.py
@@ -188,9 +195,10 @@ Power BI and text-to-SQL both read **gold**, so figures stay aligned.
 | Path | Role |
 |------|------|
 | `mysql/` | Shop-system DDL and seed |
-| `ingestion/` | DLT MySQL → DuckDB |
+| `synthetic/` | Extra trading-day generators for incremental demos |
+| `ingestion/` | DLT MySQL → DuckDB (replace or incremental) |
 | `dbt_model/` | Bronze / silver / gold models and tests |
-| `orchestration/` | End-to-end pipeline runner |
+| `orchestration/` | Full and incremental pipeline runners |
 | `powerbi/` | Parquet export for Power BI |
 | `text2sql/` | Gold-only text-to-SQL (CLI + Streamlit) |
 | `docs/` | Business-friendly understanding, architecture, transformation, and data-product guides |

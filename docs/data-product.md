@@ -38,7 +38,7 @@ Gold (fact_sales + dims)
 
 | Use case | Who | What they do | Requirements met |
 |----------|-----|--------------|------------------|
-| **UC1 — Trusted daily refresh** | Data / ops | Run one pipeline: ingest → rebuild → gold tests → Parquet export | R2, R3, R4, R6 |
+| **UC1 — Trusted daily refresh** | Data / ops | Run **incremental sync** when new shop data arrives (merge + watermark); rebuild gold and export | R2, R3, R4, R6 |
 | **UC2 — Owner performance view** | Owner | Power BI page: revenue by store, channel, and date | R4, R5, R7 |
 | **UC3 — Accountant / finance view** | Accountant | Power BI page: revenue, cost, discount, returns by category | R3, R4, R7 |
 | **UC4 — Ad-hoc ask-your-data** | Analyst | Streamlit questions on gold only (read-only) | R4, R8 |
@@ -112,28 +112,7 @@ Needs `GEMINI_API_KEY` in local `.env`. The app runs only while the laptop proce
 
 ---
 
-## 5. How to refresh the product (UC1)
-
-After MySQL shop data changes (or on a daily-style schedule):
-
-```bat
-python orchestration\run_pipeline.py
-```
-
-That run:
-
-1. Copies MySQL → DuckDB  
-2. Rebuilds bronze / silver / gold (dbt)  
-3. Runs gold quality checks (stops if checks fail)  
-4. Exports gold tables to `powerbi/export/*.parquet`  
-
-Then refresh the Power BI file against those Parquet files so Owner and Accountant pages pick up new numbers.
-
-**Requirements met:** R2, R3, R4, R6.
-
----
-
-## 6. One truth — why Power BI and chat match
+## 5. One truth — why Power BI and chat match
 
 | Layer | Stakeholder meaning |
 |-------|---------------------|
@@ -146,9 +125,9 @@ If a chat answer and a dashboard card disagree, fix gold (or the measure), not t
 
 ---
 
-## 7. Quick checklist for a demo
+## 6. Quick checklist for a demo
 
-1. Pipeline has been run successfully (`orchestration/run_pipeline.py`).  
+1. Warehouse is current (new shop data landed via **incremental sync** — see project README / orchestration).  
 2. Open the Power BI file → **Owner — performance** and **Accountant — money detail**.  
 3. Optional: `streamlit run text2sql\app.py` → ask e.g. “Which store had the highest revenue?”  
-4. Point reviewers at this guide plus the three design docs under `docs/`.
+4. Point reviewers at this guide plus the design docs under `docs/`.
