@@ -1,23 +1,15 @@
 """
-Pipeline runner: refresh the warehouse and Power BI files in one go.
+Incremental refresh: new MySQL rows → DuckDB → dbt → tests → Power BI export.
 
-What this does (in order):
-  1. Copy store systems data from MySQL into DuckDB (DLT)
-  2. Rebuild bronze, silver, and gold tables (dbt)
-  3. Run gold quality checks (dbt test) — stops if checks fail
-  4. Export gold tables to Parquet so Power BI can refresh
-
-When to run:
-  Once a day after trading, or earlier if you need a mid-day refresh.
-  Schedule this script (Windows Task Scheduler or similar) as needed.
+Use this after synthetic/generate_trading_days.py (or any new OLTP activity).
+Does NOT full-replace raw tables — DLT merges dims and pulls new facts by created_at.
 
 How to run (venv on, from the project folder):
-  python orchestration/run_pipeline.py
+  python orchestration/run_incremental.py
 
 Optional:
-  --skip-ingest   skip MySQL copy (only rebuild models + export)
-  --skip-test     skip quality checks (not recommended)
-  --skip-export   skip Power BI Parquet export
+  --skip-test
+  --skip-export
 """
 
 from __future__ import annotations
@@ -52,12 +44,7 @@ def run_step(name: str, cmd: list[str], cwd: Path) -> None:
 
 def main() -> None:
     parser = argparse.ArgumentParser(
-        description="Refresh warehouse and Power BI export files"
-    )
-    parser.add_argument(
-        "--skip-ingest",
-        action="store_true",
-        help="Skip copying MySQL into DuckDB",
+        description="Incremental sync: MySQL deltas → gold → Power BI export"
     )
     parser.add_argument(
         "--skip-test",
@@ -73,17 +60,14 @@ def main() -> None:
 
     python = sys.executable
     dbt = str(DBT_EXE if DBT_EXE.exists() else "dbt")
-    log("Pipeline start")
+    log("Incremental pipeline start")
     log(f"Project folder: {ROOT}")
 
-    if not args.skip_ingest:
-        run_step(
-            "Copy MySQL data into DuckDB",
-            [python, str(INGEST_SCRIPT)],
-            cwd=ROOT,
-        )
-    else:
-        log("SKIP: MySQL copy")
+    run_step(
+        "Incremental MySQL -> DuckDB (merge + created_at)",
+        [python, str(INGEST_SCRIPT), "--mode", "incremental"],
+        cwd=ROOT,
+    )
 
     run_step(
         "Rebuild bronze, silver, and gold",
@@ -116,7 +100,7 @@ def main() -> None:
     else:
         log("SKIP: Power BI export")
 
-    log("Pipeline SUCCESS")
+    log("Incremental pipeline SUCCESS")
 
 
 if __name__ == "__main__":
