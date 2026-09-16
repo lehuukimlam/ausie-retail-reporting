@@ -91,6 +91,8 @@ The `.pbix` is built on the gold star (`fact_sales` joined to location, product,
 
 **Business question:** *Can we answer a one-off question without rebuilding the report?*
 
+![Ask your data — Streamlit UI](./images/streamlit-ask-your-data.png)
+
 | Piece | Role |
 |-------|------|
 | Streamlit | Simple browser form (question, suggestions, results table) |
