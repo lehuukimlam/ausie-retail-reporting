@@ -316,14 +316,9 @@ Bronze tables are **not** normalised like this on purpose; they are source-shape
 
 ---
 
-## 5. Suggested build order (still design → then code)
+## 5. Build status note
 
-1. Agree this doc (bronze columns + gold ERD)
-2. Freeze sample volumes (e.g. 50 stores, 8k SKUs, 24 months)
-3. Generate bronze synthetic files
-4. Implement silver rules one dirt-type at a time
-5. Build gold dims + `fact_sales`
-6. Only then: dashboard / SQL examples
+Schemas and gold ERD above are implemented in `dbt_model/`. Demo volume is a **smaller seed** plus optional synthetic trading days; architecture remains sized for mid-size retail (~50 stores / ~8k SKUs / ~24 months) if generators grow later.
 
 ---
 

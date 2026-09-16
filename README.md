@@ -1,5 +1,7 @@
 # ausie-retail-reporting
 
+End-to-end Aussie retail medallion pipeline with trusted gold, Power BI for owner/accountant, read-only ask-your-data, and incremental sync for new trading days — demonstrated on synthetic data.
+
 Reporting data platform for a **synthetic mid-size Australian omnichannel specialty retailer**.
 
 The project turns messy store and online sales extracts into a trusted reporting model that **owners** and **accountants** can use for revenue, margin, channel, product, and staff views — without replacing POS, ERP, or Shopify.
@@ -43,13 +45,15 @@ This project simulates **one mid-size Australian omnichannel specialty retailer*
 
 ### Retailer shape we simulate
 
+**Design target** (architecture and requirements are sized for this):
+
 - About **50 stores** across NSW, VIC, QLD, WA, SA
 - Plus an **online** channel (Shopify-style)
 - About **8,000 products (SKUs)**
 - About **24 months** of sales history
 - Australian retail calendar effects (summer peak Dec–Jan, Boxing Day, EOFY, Click Frenzy, Black Friday, back-to-school)
 
-The architecture is built for that scale. The repository ships a working MySQL seed and a full pipeline run so the model and reports can be used today; volume can be expanded without redesigning the solution.
+**What ships in the repo today:** a smaller MySQL seed (multi-store + online + products/staff/customers) plus optional **synthetic trading-day** inserts (e.g. 3-day spans) to practise **incremental sync**. Volume can grow without redesigning the pipeline.
 
 ### What “sales” means here
 
@@ -97,7 +101,7 @@ After examining the business context above, the project is required to deliver t
 
 | # | Requirement | Why it matters |
 |---|-------------|----------------|
-| R1 | Represent one Aussie omnichannel retailer (stores + online), sized toward ~50 stores, ~8k SKUs, ~24 months | Matches the real mid-size specialty shape we simulate |
+| R1 | Represent one Aussie omnichannel retailer (stores + online); architecture sized for ~50 stores / ~8k SKUs / ~24 months, demonstrated on a smaller seed + incremental trading days | Matches the mid-size specialty shape without claiming full volume in the demo seed |
 | R2 | Keep a **raw** layer that preserves messy source-style data | Audit trail; mirrors how POS / ERP / CRM / online actually land |
 | R3 | Provide a **cleaned** layer (dedupe, GST, timezones, late data, customer matching, returns, category history, location codes) | Spreadsheets fail on these; reporting cannot |
 | R4 | Publish a **reporting model**: sales **fact** (revenue, cost, discount, qty, keys) + **dimensions** (staff, location, product, date; customer where known) | Owner/accountant views need facts and dims, not exports |
