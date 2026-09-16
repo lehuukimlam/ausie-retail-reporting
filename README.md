@@ -25,6 +25,7 @@ Technical detail lives in the pipeline folders. The three design guides below ar
 | [docs/data-understanding.md](docs/data-understanding.md) | What the raw retail data looks like, why it is messy, and the target reporting model (fact + dimensions) |
 | [docs/data-architecture-stack.md](docs/data-architecture-stack.md) | How the end-to-end solution is put together, in plain stages |
 | [docs/data-transformation.md](docs/data-transformation.md) | What we clean and why, how gold reporting is built, and how quality is checked |
+| [docs/data-product.md](docs/data-product.md) | What stakeholders open (Power BI + ask-your-data), lined to use cases and requirements |
 
 ---
 
@@ -126,7 +127,7 @@ These use cases are the stakeholder-facing outcomes of the requirements above.
 | **UC2 — Owner performance view** | Owner | Open Power BI on gold: revenue by store, channel, product, period; compare store vs online | R4, R5, R7 |
 | **UC3 — Accountant / finance view** | Accountant | Same gold model: revenue, cost, discount, returns, GST-related fields, consistent dims | R3, R4, R7 |
 | **UC4 — Ad-hoc ask-your-data** | Analyst (optional for owner) | Ask plain-English questions in the Streamlit app; answers come from **gold only**, same numbers as Power BI, read-only | R4, R8 |
-| **UC5 — Readable design pack** | Business reader / reviewer | Read data understanding, architecture, and transformation guides without needing SQL | R9 |
+| **UC5 — Readable design pack** | Business reader / reviewer | Read data understanding, architecture, transformation, and data-product guides without needing SQL | R9 |
 
 ---
 
@@ -192,4 +193,4 @@ Power BI and text-to-SQL both read **gold**, so figures stay aligned.
 | `orchestration/` | End-to-end pipeline runner |
 | `powerbi/` | Parquet export for Power BI |
 | `text2sql/` | Gold-only text-to-SQL (CLI + Streamlit) |
-| `docs/` | Business-friendly understanding, architecture, and transformation guides |
+| `docs/` | Business-friendly understanding, architecture, transformation, and data-product guides |
