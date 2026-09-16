@@ -20,7 +20,13 @@ You should be able to answer:
 - Which business use cases are delivered, and how do they meet those requirements?
 - Where are the plain-language design documents?
 
-Technical detail lives in the pipeline folders. The three design guides below are written in **business-friendly language** (same role as stakeholder Word packs; kept as Markdown in Git so they stay with the project on GitHub):
+Technical detail lives in the pipeline folders. Design guides are written in **business-friendly language** and link to each other. Suggested reading order:
+
+1. This README (context → requirements → use cases)  
+2. [docs/data-understanding.md](docs/data-understanding.md) — what the data looks like  
+3. [docs/data-architecture-stack.md](docs/data-architecture-stack.md) — how the stages fit  
+4. [docs/data-transformation.md](docs/data-transformation.md) — what we clean and how we test  
+5. [docs/data-product.md](docs/data-product.md) — what owners/accountants open (with screenshots)
 
 | Design document | What a business reader gets |
 |-----------------|-----------------------------|

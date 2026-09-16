@@ -2,7 +2,14 @@
 
 This guide explains **what we clean**, **why dbt**, **how layers relate**, **how we test gold**, and **how to see the model graph in the UI**.
 
-Technical SQL lives under `dbt_model/models/`. Architecture: [data-architecture-stack.md](./data-architecture-stack.md). Schemas / ERD: [data-understanding.md](./data-understanding.md).
+Written for a business reader first. Technical SQL lives under `dbt_model/models/`.
+
+| Read next | What you get |
+|-----------|----------------|
+| [README](../README.md) | Business context, requirements, use cases |
+| [data-understanding.md](./data-understanding.md) | Bronze shapes and gold ERD |
+| [data-architecture-stack.md](./data-architecture-stack.md) | Tools and stages end to end |
+| [data-product.md](./data-product.md) | Power BI + ask-your-data stakeholders use |
 
 ---
 
@@ -118,31 +125,4 @@ Then open the URL it prints (usually `http://127.0.0.1:8080`).
 4. Column descriptions from `schema.yml` appear on the model page.
 5. Press **Ctrl+C** in the terminal to stop the docs server when finished.
 
-Optional: in Cursor/VS Code, a **dbt Power User** (or similar) extension can show lineage inside the editor — nice later; `dbt docs serve` works without extra plugins.
-
----
-
-## 6. Typical daily commands (reminder)
-
-```bat
-cd C:\Users\admin\Projects\ausie-retail-reporting
-.venv\Scripts\activate.bat
-
-python ingestion\load_mysql.py
-
-cd dbt_model
-dbt run --profiles-dir .
-dbt test --select path:models/gold --profiles-dir .
-```
-
----
-
-## Session checkpoint
-
-| Done | Status |
-|------|--------|
-| MySQL DDL + small seed | Yes |
-| DLT → DuckDB raw | Yes |
-| Bronze / silver / gold | Yes |
-| Gold dbt tests | Yes (passing) |
-| This transformation guide | Yes |
+After transforms, stakeholders use gold via [data-product.md](./data-product.md) (Power BI and ask-your-data).

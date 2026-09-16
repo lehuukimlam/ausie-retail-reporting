@@ -1,12 +1,15 @@
 # Data architecture stack
 
-Engineering stack for the Aussie retail medallion pipeline:
+How the solution is put together: **MySQL → DLT → DuckDB → dbt (bronze / silver / gold) → Power BI + text-to-SQL**.
 
-**MySQL OLTP → DLT → DuckDB → dbt (bronze / silver / gold) → Power BI + text-to-SQL**
+Written for a business reader who wants the stages without diving into every SQL file.
 
-Business context: [README](../README.md)  
-Data shapes / ERD: [data-understanding.md](./data-understanding.md)  
-Stakeholder products: [data-product.md](./data-product.md)
+| Read next | What you get |
+|-----------|----------------|
+| [README](../README.md) | Business context, requirements, use cases |
+| [data-understanding.md](./data-understanding.md) | Bronze shapes and gold ERD |
+| [data-transformation.md](./data-transformation.md) | Cleaning and tests in business terms |
+| [data-product.md](./data-product.md) | What owners and accountants open |
 
 ---
 
@@ -19,8 +22,7 @@ Stakeholder products: [data-product.md](./data-product.md)
 | **3. Warehouse** | **DuckDB** (`warehouse.duckdb`) | OLAP store for bronze / silver / gold |
 | **4. Transform** | **dbt** | Bronze (raw) → silver (cleaned) → gold (`dim_*` + `fact_sales`) |
 | **5. Orchestration** | **Python** (`orchestration/run_pipeline.py`, `run_incremental.py`) | Ingest → dbt run → gold tests → Parquet export |
-| **6. Code quality** | **Black** + **SQLFluff** (DuckDB dialect) | Format Python; lint dbt SQL |
-| **7. Serving** | **Power BI** + **text-to-SQL** (Streamlit + Gemini) | Dashboards and read-only questions on **gold only** |
+| **6. Serving** | **Power BI** + **text-to-SQL** (Streamlit + Gemini) | Dashboards and read-only questions on **gold only** |
 
 ---
 
@@ -47,7 +49,6 @@ flowchart TD
 
     subgraph OrchestrationLayer ["4. Orchestration & quality"]
         Orch["run_pipeline / run_incremental"]
-        Quality["Black + SQLFluff"]
         Tests["dbt gold tests"]
     end
 
@@ -60,7 +61,6 @@ flowchart TD
     DLT -->|Load| Bronze
     Orch -->|runs| DLT
     Orch -->|runs dbt + tests| WarehouseLayer
-    Quality --> Orch
     Tests --> Orch
     Gold --> PBI
     Gold --> T2S
@@ -77,7 +77,7 @@ flowchart TD
 | 3 | Ingestion | DLT | MySQL → DuckDB `raw` (replace or incremental) |
 | 4 | Warehouse | DuckDB | Single local OLAP file for the medallion |
 | 5 | Transform | dbt | Cleaning + star schema per [data-understanding](./data-understanding.md) |
-| 6 | Quality | Black, SQLFluff, dbt tests | Format, lint, and validate gold |
+| 6 | Quality | dbt gold tests | Validate keys, relationships, and accepted values on reporting tables |
 | 7 | Orchestration | `orchestration/*.py` | Full or incremental end-to-end run |
 | 8 | Serving | Power BI, text-to-SQL | Read from gold only |
 
@@ -109,7 +109,7 @@ ausie-retail-reporting/
 | **Silver** | Dedupe helpers, GST both ways, UTC + local business date, customer match, return links, SCD prep |
 | **Gold** | `dim_date`, `dim_location`, `dim_staff` (versions), `dim_product` (versions), `dim_customer`, `fact_sales` |
 
-MySQL + DLT feed bronze; dbt builds silver and gold; Power BI and text-to-SQL consume gold.
+MySQL + DLT feed bronze; dbt builds silver and gold; Power BI and text-to-SQL consume gold ([data-product.md](./data-product.md)).
 
 ---
 

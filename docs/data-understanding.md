@@ -1,8 +1,17 @@
 # Data understanding
 
-This doc describes the **data** for the synthetic Aussie retail project: what we generate for the **bronze (raw)** layer, how we plan to turn it into **facts and dims**, and the target **ERD** (crow’s foot). No pipeline code yet.
+This guide describes **what the data looks like**: messy source (bronze) shapes, how they become a reporting star, and the gold **ERD**.
 
-Layers in plain words:
+Written for a business reader first. Technical SQL lives under `dbt_model/models/`.
+
+| Read next | What you get |
+|-----------|----------------|
+| [README](../README.md) | Business context, requirements, use cases |
+| [data-architecture-stack.md](./data-architecture-stack.md) | Tools and stages end to end |
+| [data-transformation.md](./data-transformation.md) | Cleaning and gold in business terms |
+| [data-product.md](./data-product.md) | Power BI + ask-your-data stakeholders use |
+
+### Layers in plain words
 
 | Layer | Name | Meaning |
 |-------|------|---------|
@@ -31,7 +40,7 @@ Generators may populate MySQL; **DLT** loads MySQL → DuckDB bronze.
 
 ## 2. Bronze schemas (raw contracts)
 
-Types are logical (what the column means). Physical types (CSV/Parquet) come later.
+Types are logical (what the column means). Implemented in MySQL / DuckDB / dbt.
 
 ### 2.1 `bronze_store`
 
@@ -312,22 +321,4 @@ erDiagram
 
 Same person (`staff_id`) or same SKU (`sku`) can appear as **many rows** in the dim (one per version). Facts point at the version that was true on the sale date.
 
-Bronze tables are **not** normalised like this on purpose; they are source-shaped. The ERD above is the **gold** target the transforms aim at.
-
----
-
-## 5. Build status note
-
-Schemas and gold ERD above are implemented in `dbt_model/`. Demo volume is a **smaller seed** plus optional synthetic trading days; architecture remains sized for mid-size retail (~50 stores / ~8k SKUs / ~24 months) if generators grow later.
-
----
-
-## 6. Decisions (locked)
-
-| Choice | Decision |
-|--------|----------|
-| **Product history** | Full **version rows** in `dim_product` (SCD2): name, category, prices/costs change over time |
-| **Staff history** | Full **version rows** in `dim_staff` (SCD2): name, **role/position**, home store, rating change over time |
-| **Fact keys** | `fact_sales` uses the product/staff version valid on `business_date_local` |
-| **Staff on online sales** | `staff_key` **null** |
-| **Guest customers** | `customer_key` **null** (optional unused guest bucket row allowed later) |
+Bronze tables are **not** normalised like this on purpose; they are source-shaped. The ERD above is the **gold** model Power BI and ask-your-data read — see [data-product.md](./data-product.md).

@@ -2,13 +2,13 @@
 
 This guide explains **what stakeholders open**, **which business questions each view answers**, and **how those products meet the project requirements**.
 
-It is written for a **business reader** (owner, accountant, reviewer). Pipeline detail lives in the other guides.
+Written for a business reader (owner, accountant, reviewer). Pipeline detail lives in the other guides.
 
-| Related guide | Role |
-|---------------|------|
+| Read next | What you get |
+|-----------|----------------|
 | [README](../README.md) | Business context, requirements (R1–R9), use cases (UC1–UC5) |
 | [data-understanding.md](./data-understanding.md) | Raw data shape and gold reporting model |
-| [data-architecture-stack.md](./data-architecture-stack.md) | End-to-end technical stages |
+| [data-architecture-stack.md](./data-architecture-stack.md) | Tools and stages end to end |
 | [data-transformation.md](./data-transformation.md) | Cleaning, gold, and quality checks in business terms |
 
 ---
