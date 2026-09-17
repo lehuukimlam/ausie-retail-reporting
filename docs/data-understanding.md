@@ -9,6 +9,7 @@ Written for a business reader first. Technical SQL lives under `dbt_model/models
 | [README](../README.md) | Business context, requirements, use cases |
 | [data-architecture-stack.md](./data-architecture-stack.md) | Tools and stages end to end |
 | [data-transformation.md](./data-transformation.md) | Cleaning and gold in business terms |
+| [data-governance.md](./data-governance.md) | Trust rules, freshness, failure handling |
 | [data-product.md](./data-product.md) | Power BI + ask-your-data stakeholders use |
 
 ### Layers in plain words
@@ -322,3 +323,65 @@ erDiagram
 Same person (`staff_id`) or same SKU (`sku`) can appear as **many rows** in the dim (one per version). Facts point at the version that was true on the sale date.
 
 Bronze tables are **not** normalised like this on purpose; they are source-shaped. The ERD above is the **gold** model Power BI and ask-your-data read — see [data-product.md](./data-product.md).
+
+---
+
+## 5. Business terms and reporting definitions
+
+Authoritative meanings for owner/accountant language. Power BI labels and ask-your-data should follow these. Technical SQL names stay as-is (e.g. `category_name`); reports show the **business label**.
+
+| Business term | Definition | How we calculate / interpret | Notes |
+|---------------|------------|------------------------------|--------|
+| **Revenue (incl. GST)** | Money on the sale/return **line**, including GST | Sum `fact_sales.revenue_inc_gst` | Signed: returns reduce the total. Do not subtract returns again. |
+| **Revenue (excl. GST)** | Same line money, excluding GST | Sum `fact_sales.revenue_ex_gst` | Prefer this when comparing to product cost (also ex GST). |
+| **GST** | Tax amount on the line | Sum `fact_sales.gst_amount` | From the receipt/order; signed with returns. |
+| **Discounts (incl. GST)** | Discount applied on the line, including GST | Sum `fact_sales.discount_inc_gst` | Line totals already reflect discount; do not subtract twice. |
+| **Product cost (excl. GST)** | Cost of goods for the line, excluding GST | Sum `fact_sales.product_cost_ex_gst` | From the **product version** on the sale × qty. |
+| **Returns** | A return transaction line | `fact_sales.is_return = true`; amounts usually negative | Uses the return’s **trading date**, not only the original sale date. |
+| **Channel** | How the sale was placed | `fact_sales.channel`: `offline` (in-store) or `online` | Stored values are technical; charts may label “In-store” / “Online”. |
+| **Category** | Product category **at time of sale** | `dim_product.category_name` via the product **version** on the fact | Historical view — not “today’s” category if the product moved later. |
+| **Trading date** | Local business day of the sale/order | `dim_date` via `fact_sales.date_key` (from store/online local business date) | Use this for “sales by day/month,” not pipeline run time. |
+| **Freshness (“as of”)** | How current the published numbers are | Last **successful** pipeline run (tests passed + export) and latest trading date in gold | There is **no** gold column for warehouse import time. |
+
+**Grain:** one `fact_sales` row = one **product line** on a sale or return (not one whole receipt). Counting rows ≠ counting purchases.
+
+---
+
+## 6. Gold reporting data dictionary
+
+### `fact_sales` — one row per sale/return line
+
+| Technical field | Business label | Meaning |
+|-----------------|----------------|---------|
+| `fact_sales_key` | Sales line ID | Unique key for the reporting line |
+| `date_key` | Trading date key | Links to Date |
+| `location_key` | Location key | Links to Store / location |
+| `staff_key` | Staff key | Links to Staff version; blank for online |
+| `product_key` | Product key | Links to Product **version** |
+| `customer_key` | Customer key | Links to Customer; blank for guest |
+| `channel` | Channel | `offline` or `online` |
+| `source_system` | Source system | e.g. POS vs e-commerce label on the line |
+| `transaction_id` | Transaction / order number | Receipt or order id |
+| `line_id` | Line number | Line within the transaction |
+| `original_transaction_id` | Original transaction | Link for returns when present |
+| `is_return` | Return? | True for return lines |
+| `qty` | Quantity | Units; often negative on returns |
+| `revenue_inc_gst` | Revenue (incl. GST) | Line amount including GST |
+| `revenue_ex_gst` | Revenue (excl. GST) | Line amount excluding GST |
+| `discount_inc_gst` | Discounts (incl. GST) | Discount on the line |
+| `gst_amount` | GST | GST on the line |
+| `unit_price_inc_gst` | Unit price (incl. GST) | Unit price including GST |
+| `product_cost_ex_gst` | Product cost (excl. GST) | Cost × qty from product version |
+
+### Dimensions (summary)
+
+| Table | One row means | Important business fields |
+|-------|---------------|---------------------------|
+| `dim_date` | One calendar day | `full_date`, year/month, AU fiscal helpers |
+| `dim_location` | One store or online location | `store_name`, `store_code`, `state_code`, `channel` |
+| `dim_product` | One **product version** | `sku`, `product_name`, **Category** (`category_name`), brand, costs/prices |
+| `dim_staff` | One **staff version** | Name, role; used for in-store attribution |
+| `dim_customer` | One loyalty customer | Name, email; guests have no key on the fact |
+
+Trust and refresh rules: [data-governance.md](./data-governance.md).  
+Cleaning and test behaviour: [data-transformation.md](./data-transformation.md).

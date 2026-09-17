@@ -2,118 +2,189 @@ version: 2
 
 models:
   - name: dim_date
-    description: Date dimension (calendar + AU FY). PK date_key.
+    description: >
+      Date dimension for reporting. One row = one calendar day.
+      Use for trading-date filters and trends. PK date_key (YYYYMMDD).
     columns:
       - name: date_key
-        description: Surrogate PK as YYYYMMDD
+        description: Trading date key (YYYYMMDD). Joins to fact_sales.date_key.
         tests:
           - unique
           - not_null
       - name: full_date
+        description: Calendar date (business label - Trading date).
         tests:
           - unique
           - not_null
 
   - name: dim_location
-    description: Store / channel dimension. PK location_key.
+    description: >
+      Store or online location. One row = one location.
+      Business labels - Store, Store code, State, Channel.
     columns:
       - name: location_key
+        description: Location key. Joins to fact_sales.location_key.
         tests:
           - unique
           - not_null
       - name: store_code
+        description: Short store code (e.g. MEL01).
         tests:
           - unique
           - not_null
+      - name: store_name
+        description: Store or channel display name.
       - name: channel
+        description: Location channel attribute (offline or online).
         tests:
           - not_null
           - accepted_values:
               values: ["offline", "online"]
+      - name: state_code
+        description: Standard Australian state code (e.g. NSW, VIC).
 
   - name: dim_product
-    description: Product VERSION dimension (SCD2). PK product_key.
+    description: >
+      Product VERSION dimension (SCD2). One row = one product version,
+      not one forever SKU. Category on a sale is the category on this version
+      (historical at time of sale). PK product_key.
     columns:
       - name: product_key
+        description: Product version key. Joins to fact_sales.product_key.
         tests:
           - unique
           - not_null
       - name: product_id
+        description: Durable product id across versions.
         tests:
           - not_null
       - name: sku
+        description: SKU code.
         tests:
           - not_null
+      - name: product_name
+        description: Product name for this version.
+      - name: category_name
+        description: >
+          Category (business label). Category recorded on this product version —
+          use for historical sales by category, not necessarily today's category.
+      - name: brand_name
+        description: Brand for this version.
+      - name: unit_cost_ex_gst
+        description: Unit cost excluding GST (ERP basis) for this version.
 
   - name: dim_staff
-    description: Staff VERSION dimension (SCD2). PK staff_key.
+    description: >
+      Staff VERSION dimension (SCD2). One row = one staff role/location version.
+      Online sales often have no staff on the fact.
     columns:
       - name: staff_key
+        description: Staff version key. Joins to fact_sales.staff_key when present.
         tests:
           - unique
           - not_null
       - name: staff_id
+        description: Durable staff id across versions.
         tests:
           - not_null
 
   - name: dim_customer
-    description: Customer dimension. PK customer_key. Guests are NULL on fact.
+    description: >
+      Loyalty customer. Guests have no customer_key on fact_sales
+      (blank is allowed — not a fake Guest row).
     columns:
       - name: customer_key
+        description: Customer key. Joins to fact_sales.customer_key when present.
         tests:
           - unique
           - not_null
       - name: email
+        description: Customer email as stored for this row.
         tests:
           - not_null
 
   - name: fact_sales
     description: >
-      Line-grain sales fact (POS + online). Linking table of the star —
-      FKs point at dim PKs (M:1 from fact to each dim).
+      Sales fact at LINE grain (POS + online). One row = one sale or return line,
+      not one whole receipt. Linking table of the star. Money fields are signed
+      so returns reduce revenue when summed. See project glossary for Revenue,
+      Returns, Channel, Category, Trading date.
     columns:
       - name: fact_sales_key
+        description: Unique sales line id for reporting.
         tests:
           - unique
           - not_null
       - name: date_key
+        description: Trading date key (local business day).
         tests:
           - not_null
           - relationships:
               to: ref('dim_date')
               field: date_key
       - name: location_key
+        description: Store / fulfilment location key.
         tests:
           - not_null
           - relationships:
               to: ref('dim_location')
               field: location_key
       - name: product_key
+        description: Product version key (point-in-time category and cost).
         tests:
           - not_null
           - relationships:
               to: ref('dim_product')
               field: product_key
       - name: staff_key
-        description: NULL for online channel
+        description: Staff version key. NULL for online channel.
         tests:
           - relationships:
               to: ref('dim_staff')
               field: staff_key
       - name: customer_key
-        description: NULL for guest checkout
+        description: Customer key. NULL for guest checkout.
         tests:
           - relationships:
               to: ref('dim_customer')
               field: customer_key
       - name: channel
+        description: >
+          Channel (business label). Stored values offline (in-store) or online.
+          Prefer this field for channel reporting on the fact.
         tests:
           - not_null
           - accepted_values:
               values: ["offline", "online"]
+      - name: source_system
+        description: Source system label on the line (e.g. POS vs e-commerce).
+      - name: transaction_id
+        description: Transaction or order number.
+      - name: line_id
+        description: Line number within the transaction.
+      - name: original_transaction_id
+        description: Original transaction reference for returns when present.
+      - name: is_return
+        description: Return flag (business label - Return?). True for return lines.
       - name: qty
+        description: Quantity. Often negative on returns.
         tests:
           - not_null
       - name: revenue_inc_gst
+        description: >
+          Revenue including GST (AUD). Sum for totals; returns are signed negative.
+          Do not subtract returns again.
         tests:
           - not_null
+      - name: revenue_ex_gst
+        description: >
+          Revenue excluding GST (AUD). Prefer when comparing to product cost.
+      - name: discount_inc_gst
+        description: Discount including GST. Line revenue already reflects discount.
+      - name: gst_amount
+        description: GST amount on the line (signed with returns).
+      - name: unit_price_inc_gst
+        description: Unit price including GST.
+      - name: product_cost_ex_gst
+        description: >
+          Product cost excluding GST for the line (version unit cost x qty).

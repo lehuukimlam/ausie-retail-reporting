@@ -40,33 +40,50 @@ GOLD_TABLES = [
 # Short business notes so the AI picks the right columns
 TABLE_NOTES = {
     "fact_sales": (
-        "One row = one sale or return line. "
+        "One row = one sale or return LINE (not one receipt). "
         "Join dims on date_key, location_key, product_key, staff_key, customer_key. "
-        "staff_key can be null for online; customer_key can be null for guests. "
-        "Money: revenue_inc_gst, revenue_ex_gst, discount_inc_gst, gst_amount, product_cost_ex_gst. "
-        "channel is 'offline' or 'online'. is_return is true for returns."
+        "staff_key null for online; customer_key null for guests. "
+        "Money: revenue_inc_gst / revenue_ex_gst (signed; returns negative — do not subtract returns twice). "
+        "discount_inc_gst, gst_amount, product_cost_ex_gst. "
+        "channel is 'offline' (in-store) or 'online'. is_return true for returns. "
+        "Trading date = date_key (local business day), not pipeline run time."
     ),
     "dim_date": (
-        "Calendar day. PK date_key (YYYYMMDD). "
+        "Calendar / trading day. PK date_key (YYYYMMDD). "
         "Use full_date, calendar_year, calendar_month, fiscal_year_au, season_au."
     ),
     "dim_location": (
-        "Store or online channel. PK location_key. "
+        "Store or online location. PK location_key. "
         "Use store_name, store_code, state_code, channel."
     ),
     "dim_product": (
-        "Product version (not only current SKU). PK product_key. "
+        "Product VERSION (SCD2), not only current SKU. PK product_key. "
+        "category_name = Category at that version (historical for the sale). "
         "Use product_name, category_name, brand_name, sku."
     ),
     "dim_staff": (
-        "Staff version. PK staff_key. "
+        "Staff VERSION. PK staff_key. "
         "Use staff_name, role_name. Online sales may have no staff."
     ),
     "dim_customer": (
-        "Customer. PK customer_key. "
-        "Use customer_name, email, state_code. Guests are missing on the fact."
+        "Loyalty customer. PK customer_key. "
+        "Use customer_name, email, state_code. Guests are null on the fact."
     ),
 }
+
+# Shared metric rules for the model (keep aligned with docs/data-understanding.md §5)
+BUSINESS_RULES = """
+Business rules for SQL (must follow):
+- Grain: count or sum fact_sales lines carefully; three lines on one receipt are three rows, not three purchases.
+- Default money for "revenue" / "sales $" unless the user specifies GST: use revenue_ex_gst.
+If they say including GST / inc GST, use revenue_inc_gst.
+- Returns: is_return = true; amounts are signed — SUM already nets returns. Never subtract returns again.
+- Channel: use fact_sales.channel ('offline' or 'online'). offline = in-store.
+- Category: join dim_product on product_key; use category_name (category at time of sale / product version).
+- Trading date filters: join dim_date on date_key (or filter date_key); not an import/load timestamp.
+- There is no imported_at / loaded_at column on gold.
+- Ambiguous "sales": prefer revenue_ex_gst by trading date; if unclear, prefer that default over inventing metrics.
+""".strip()
 
 
 def connect() -> duckdb.DuckDBPyConnection:
@@ -102,6 +119,8 @@ def build_schema_prompt(con: duckdb.DuckDBPyConnection | None = None) -> str:
         "Write DuckDB SQL only. Use ONLY these tables in schema main_gold.",
         "Prefer joins from fact_sales to dimensions. Do not invent tables or columns.",
         "Do not run DDL or change data (no INSERT/UPDATE/DELETE/DROP/ALTER/COPY).",
+        "",
+        BUSINESS_RULES,
         "",
     ]
 
