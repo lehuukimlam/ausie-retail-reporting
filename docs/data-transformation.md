@@ -7,8 +7,9 @@ Written for a business reader first. Technical SQL lives under `dbt_model/models
 | Read next | What you get |
 |-----------|----------------|
 | [README](../README.md) | Business context, requirements, use cases |
-| [data-understanding.md](./data-understanding.md) | Bronze shapes and gold ERD |
+| [data-understanding.md](./data-understanding.md) | Bronze shapes, gold ERD, glossary + dictionary |
 | [data-architecture-stack.md](./data-architecture-stack.md) | Tools and stages end to end |
+| [data-governance.md](./data-governance.md) | Trust rules, freshness, failure handling |
 | [data-product.md](./data-product.md) | Power BI + ask-your-data stakeholders use |
 
 ---
@@ -126,3 +127,50 @@ Then open the URL it prints (usually `http://127.0.0.1:8080`).
 5. Press **Ctrl+C** in the terminal to stop the docs server when finished.
 
 After transforms, stakeholders use gold via [data-product.md](./data-product.md) (Power BI and ask-your-data).
+
+Trust rules and freshness: [data-governance.md](./data-governance.md).
+
+---
+
+## 6. Refresh checks, failure handling, and incremental limits
+
+### Normal refresh path
+
+| Step | What happens | If it fails |
+|------|--------------|-------------|
+| Ingest | MySQL → DuckDB (`replace` or `incremental`) | Stop; fix connection/load |
+| dbt run | Rebuild bronze / silver / gold | Stop; fix models |
+| dbt test (gold) | Keys, relationships, channel values | **Stop before Parquet export** on the normal runner path |
+| Export | Write `powerbi/export/*.parquet` | Fix export; do not claim PBI is refreshed |
+
+Commands: `orchestration/run_pipeline.py` (full) or `orchestration/run_incremental.py` (day-to-day).
+
+`--skip-test` / `--skip-export` exist for development. Those runs must **not** be described as validated reporting refreshes ([governance](./data-governance.md)).
+
+### What each gold check means for business
+
+| Check | Why the business cares | Blocks export? |
+|-------|------------------------|----------------|
+| Unique / not-null keys | Stops duplicate or blank IDs that can double-count or break joins | Yes (on normal path) |
+| Fact → dim relationships | Sale must point at a real store, product, date (and staff/customer when present) | Yes |
+| Channel only offline/online | Stops typo channels splitting reports | Yes |
+| Nullable staff/customer | Online/guest blanks are allowed | — |
+
+Passing tests means **those assertions** passed — not that every revenue total is economically perfect.
+
+### Incremental sync — what it promises
+
+| Supported | Limitation |
+|-----------|------------|
+| New fact rows with a newer MySQL `created_at` after the last watermark | **Amendments** to old rows that keep the same old `created_at` may **not** be detected |
+| Dim rows merged by primary key | — |
+| New return entered later as a **new** row | Still needs correct returns definition in reports |
+
+Watermark field: **`created_at`** on transactional tables (not trading date, not a gold “imported_at”).
+
+### Power BI export vs ask-your-data
+
+- Power BI reads **exported Parquet** (updated after a green export).  
+- Ask-your-data reads **live DuckDB gold**.  
+
+After a failed test, export may stop while DuckDB already changed. **Manual practice:** leave Streamlit closed during refresh; reopen only after a green run ([governance — freshness](./data-governance.md#3-freshness-as-of)).

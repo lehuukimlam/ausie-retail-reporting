@@ -7,8 +7,9 @@ Written for a business reader who wants the stages without diving into every SQL
 | Read next | What you get |
 |-----------|----------------|
 | [README](../README.md) | Business context, requirements, use cases |
-| [data-understanding.md](./data-understanding.md) | Bronze shapes and gold ERD |
+| [data-understanding.md](./data-understanding.md) | Bronze shapes, gold ERD, glossary + dictionary |
 | [data-transformation.md](./data-transformation.md) | Cleaning and tests in business terms |
+| [data-governance.md](./data-governance.md) | Trust rules, freshness, failure handling |
 | [data-product.md](./data-product.md) | What owners and accountants open |
 
 ---
@@ -109,7 +110,7 @@ ausie-retail-reporting/
 | **Silver** | Dedupe helpers, GST both ways, UTC + local business date, customer match, return links, SCD prep |
 | **Gold** | `dim_date`, `dim_location`, `dim_staff` (versions), `dim_product` (versions), `dim_customer`, `fact_sales` |
 
-MySQL + DLT feed bronze; dbt builds silver and gold; Power BI and text-to-SQL consume gold ([data-product.md](./data-product.md)).
+MySQL + DLT feed bronze; dbt builds silver and gold; Power BI and text-to-SQL consume gold ([data-product.md](./data-product.md)). Quality and freshness rules: [data-governance.md](./data-governance.md).
 
 ---
 

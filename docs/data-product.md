@@ -7,9 +7,10 @@ Written for a business reader (owner, accountant, reviewer). Pipeline detail liv
 | Read next | What you get |
 |-----------|----------------|
 | [README](../README.md) | Business context, requirements (R1–R9), use cases (UC1–UC5) |
-| [data-understanding.md](./data-understanding.md) | Raw data shape and gold reporting model |
+| [data-understanding.md](./data-understanding.md) | Glossary + gold dictionary |
 | [data-architecture-stack.md](./data-architecture-stack.md) | Tools and stages end to end |
-| [data-transformation.md](./data-transformation.md) | Cleaning, gold, and quality checks in business terms |
+| [data-transformation.md](./data-transformation.md) | Cleaning, tests, refresh limits |
+| [data-governance.md](./data-governance.md) | Trust rules, freshness, failure handling |
 
 ---
 
@@ -42,7 +43,7 @@ Gold (fact_sales + dims)
 | **UC2 — Owner performance view** | Owner | Power BI page: revenue by store, channel, and date | R4, R5, R7 |
 | **UC3 — Accountant / finance view** | Accountant | Power BI page: revenue, cost, discount, returns by category | R3, R4, R7 |
 | **UC4 — Ad-hoc ask-your-data** | Analyst | Streamlit questions on gold only (read-only) | R4, R8 |
-| **UC5 — Readable design pack** | Business reader | This guide plus understanding / architecture / transformation docs | R9 |
+| **UC5 — Readable design pack** | Business reader | Understanding (glossary), architecture, transformation, governance, and this product guide | R9 |
 
 ---
 
@@ -85,6 +86,28 @@ The `.pbix` is built on the gold star (`fact_sales` joined to location, product,
 
 **Requirements met:** R3 (cleaned GST / returns-ready figures), R4 (fact + product dim), R7 (accountant dashboard).
 
+### 3.3 Power BI display names (business labels)
+
+Keep SQL column names unchanged in DuckDB. In the Power BI model, rename fields for readers:
+
+| Technical field | Show in Power BI as |
+|-----------------|---------------------|
+| `category_name` | Category |
+| `store_name` | Store |
+| `revenue_inc_gst` | Revenue (incl. GST) |
+| `revenue_ex_gst` | Revenue (excl. GST) |
+| `discount_inc_gst` | Discounts (incl. GST) |
+| `product_cost_ex_gst` | Product cost (excl. GST) |
+| `gst_amount` | GST |
+| `is_return` | Return? |
+| `channel` | Channel |
+| `full_date` | Trading date |
+
+Optional: display `offline` as “In-store” via a report label or mapping measure — that is separate from renaming the field.
+
+Metric meanings: [glossary](./data-understanding.md#5-business-terms-and-reporting-definitions).  
+Trust / freshness: [data-governance.md](./data-governance.md).
+
 ---
 
 ## 4. Ask your data (UC4)
@@ -101,6 +124,8 @@ The `.pbix` is built on the gold star (`fact_sales` joined to location, product,
 | Result | Table on screen (optional “Show SQL”) |
 
 Stakeholders should treat Power BI as the **agreed** view. Ask-your-data is for exploration on the **same** gold layer — not a second source of truth.
+
+Comparable totals need the **same gold version**, filters, dates, and revenue field (incl. vs excl. GST) — not only “both use gold.” See [governance](./data-governance.md).
 
 **Requirements met:** R4, R8.
 
@@ -129,7 +154,7 @@ If a chat answer and a dashboard card disagree, fix gold (or the measure), not t
 
 ## 6. Quick checklist for a demo
 
-1. Warehouse is current (new shop data landed via **incremental sync** — see project README / orchestration).  
-2. Open the Power BI file → **Owner — performance** and **Accountant — money detail**.  
+1. Warehouse is current (incremental sync green — tests passed; note freshness per [governance](./data-governance.md#3-freshness-as-of)).  
+2. Open the Power BI file → **Owner — performance** and **Accountant — money detail** (friendly labels applied).  
 3. Optional: `streamlit run text2sql\app.py` → ask e.g. “Which store had the highest revenue?”  
-4. Point reviewers at this guide plus the design docs under `docs/`.
+4. Point reviewers at glossary + governance + this guide under `docs/`.

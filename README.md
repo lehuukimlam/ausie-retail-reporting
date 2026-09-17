@@ -23,16 +23,18 @@ You should be able to answer:
 Technical detail lives in the pipeline folders. Design guides are written in **business-friendly language** and link to each other. Suggested reading order:
 
 1. This README (context → requirements → use cases)  
-2. [docs/data-understanding.md](docs/data-understanding.md) — what the data looks like  
+2. [docs/data-understanding.md](docs/data-understanding.md) — data shapes, glossary, gold dictionary  
 3. [docs/data-architecture-stack.md](docs/data-architecture-stack.md) — how the stages fit  
-4. [docs/data-transformation.md](docs/data-transformation.md) — what we clean and how we test  
-5. [docs/data-product.md](docs/data-product.md) — what owners/accountants open (with screenshots)
+4. [docs/data-transformation.md](docs/data-transformation.md) — cleaning, tests, refresh limits  
+5. [docs/data-governance.md](docs/data-governance.md) — trust rules, freshness, failure handling  
+6. [docs/data-product.md](docs/data-product.md) — what owners/accountants open (with screenshots)
 
 | Design document | What a business reader gets |
 |-----------------|-----------------------------|
-| [docs/data-understanding.md](docs/data-understanding.md) | What the raw retail data looks like, why it is messy, and the target reporting model (fact + dimensions) |
+| [docs/data-understanding.md](docs/data-understanding.md) | Raw shapes, gold ERD, **business glossary** and **gold data dictionary** |
 | [docs/data-architecture-stack.md](docs/data-architecture-stack.md) | How the end-to-end solution is put together, in plain stages |
-| [docs/data-transformation.md](docs/data-transformation.md) | What we clean and why, how gold reporting is built, and how quality is checked |
+| [docs/data-transformation.md](docs/data-transformation.md) | Cleaning, gold tests, incremental refresh limits |
+| [docs/data-governance.md](docs/data-governance.md) | How reporting stays trustworthy (rules, freshness, failure handling) |
 | [docs/data-product.md](docs/data-product.md) | What stakeholders open (Power BI + ask-your-data), lined to use cases and requirements |
 
 ---
@@ -137,7 +139,7 @@ These use cases are the stakeholder-facing outcomes of the requirements above.
 | **UC2 — Owner performance view** | Owner | Open Power BI on gold: revenue by store, channel, product, period; compare store vs online | R4, R5, R7 |
 | **UC3 — Accountant / finance view** | Accountant | Same gold model: revenue, cost, discount, returns, GST-related fields, consistent dims | R3, R4, R7 |
 | **UC4 — Ad-hoc ask-your-data** | Analyst (optional for owner) | Ask plain-English questions in the Streamlit app; answers come from **gold only**, same numbers as Power BI, read-only | R4, R8 |
-| **UC5 — Readable design pack** | Business reader / reviewer | Read data understanding, architecture, transformation, and data-product guides without needing SQL | R9 |
+| **UC5 — Readable design pack** | Business reader / reviewer | Read understanding (incl. glossary), architecture, transformation, governance, and data-product guides without needing SQL | R9 |
 
 ---
 
@@ -211,4 +213,4 @@ Power BI and text-to-SQL both read **gold**, so figures stay aligned.
 | `orchestration/` | Full and incremental pipeline runners |
 | `powerbi/` | Parquet export for Power BI |
 | `text2sql/` | Gold-only text-to-SQL (CLI + Streamlit) |
-| `docs/` | Business-friendly understanding, architecture, transformation, and data-product guides |
+| `docs/` | Business-friendly understanding, architecture, transformation, governance, and data-product guides |
