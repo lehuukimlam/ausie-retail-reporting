@@ -2,6 +2,7 @@ name: ausie_retail
 version: "1.0.0"
 profile: ausie_retail
 model-paths: ["models"]
+snapshot-paths: ["snapshots"]
 clean-targets: ["target", "dbt_packages"]
 
 models:
@@ -15,3 +16,7 @@ models:
     gold:
       +schema: gold
       +materialized: table
+
+snapshots:
+  ausie_retail:
+    +target_schema: snapshots
