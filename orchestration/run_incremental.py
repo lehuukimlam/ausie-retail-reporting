@@ -1,8 +1,13 @@
 """
-Incremental refresh: new MySQL rows → DuckDB → dbt → tests → Power BI export.
+Incremental refresh: new MySQL rows → DuckDB → snapshot → dbt build → Power BI export.
 
 Use this after synthetic/generate_trading_days.py (or any new OLTP activity).
 Does NOT full-replace raw tables — DLT merges dims and pulls new facts by created_at.
+
+dbt order (same as CI / run_pipeline.py):
+  1. run bronze/silver + non-customer gold
+  2. snapshot snapshot_customer
+  3. build gold + tests (or gold run only if --skip-test)
 
 How to run (venv on, from the project folder):
   python orchestration/run_incremental.py
@@ -70,17 +75,31 @@ def main() -> None:
     )
 
     run_step(
-        "Rebuild bronze, silver, and gold",
-        [dbt, "run", "--profiles-dir", "."],
+        "Rebuild bronze/silver + non-customer gold",
+        [
+            dbt,
+            "run",
+            "--exclude",
+            "dim_customer",
+            "fact_sales",
+            "--profiles-dir",
+            ".",
+        ],
+        cwd=DBT_DIR,
+    )
+
+    run_step(
+        "Snapshot customer SCD2 history",
+        [dbt, "snapshot", "--select", "snapshot_customer", "--profiles-dir", "."],
         cwd=DBT_DIR,
     )
 
     if not args.skip_test:
         run_step(
-            "Run gold quality checks",
+            "Build gold models + gold/SCD/business tests",
             [
                 dbt,
-                "test",
+                "build",
                 "--select",
                 "path:models/gold",
                 "path:tests",
@@ -90,7 +109,12 @@ def main() -> None:
             cwd=DBT_DIR,
         )
     else:
-        log("SKIP: quality checks")
+        log("SKIP: quality checks — gold run only")
+        run_step(
+            "Rebuild gold models (tests skipped)",
+            [dbt, "run", "--select", "path:models/gold", "--profiles-dir", "."],
+            cwd=DBT_DIR,
+        )
 
     if not args.skip_export:
         run_step(

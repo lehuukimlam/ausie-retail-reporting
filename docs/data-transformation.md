@@ -44,7 +44,7 @@ Written for a business reader first. Technical SQL lives under `dbt_model/models
 - CRM stays **Type-1** in MySQL; **dbt `snapshot_customer`** captures attribute history in the warehouse.
 - **`dim_customer` is version grain** (`valid_from` / `valid_to` / `is_current`). `fact_sales` picks the version valid on the sale’s trading date (half-open window).
 - **Guest checkout** has no customer id — gold keeps that as blank on the sale line (we don’t invent a fake “Guest” customer).
-- Demo: `python synthetic/demo_customer_state_move.py` (Alice NSW→VIC). Local pipeline runners do **not** call `dbt snapshot` yet — run it after silver when CRM attributes change (CI does run the snapshot before gold).
+- Demo: `python synthetic/demo_customer_state_move.py` (Alice NSW→VIC). Pipeline runners (`run_pipeline.py` / `run_incremental.py`) and CI both run `dbt snapshot --select snapshot_customer` after silver, then `dbt build` gold + tests.
 
 ### Staff (`silver_staff` → `dim_staff`)
 - People **change role / store over time**. OLTP already stores **versions** (old role closed, new role opened).

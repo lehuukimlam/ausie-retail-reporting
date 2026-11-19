@@ -22,7 +22,7 @@ Written for a business reader who wants the stages without diving into every SQL
 | **2. Ingestion** | **DLT** | Extract from MySQL into DuckDB `raw` (full replace or incremental merge) |
 | **3. Warehouse** | **DuckDB** (`warehouse.duckdb`) | OLAP store for bronze / silver / gold |
 | **4. Transform** | **dbt** | Bronze (raw) → silver (cleaned) → gold (`dim_*` + `fact_sales`) |
-| **5. Orchestration** | **Python** (`orchestration/run_pipeline.py`, `run_incremental.py`) | Ingest → dbt run → gold tests → Parquet export |
+| **5. Orchestration** | **Python** (`orchestration/run_pipeline.py`, `run_incremental.py`) | Ingest → dbt run (excl. customer gold) → snapshot → dbt build gold/tests → Parquet export |
 | **6. Serving** | **Power BI** + **text-to-SQL** (Streamlit + Gemini) | Dashboards and read-only questions on **gold only** |
 
 ---
