@@ -24,7 +24,7 @@ select
     l.line_total_inc_gst,
     (l.line_total_inc_gst - l.gst_amount) as line_total_ex_gst,
     h.business_date_local,
-    h.fulfilment_store_id as fulfilment_store_id,
+    h.fulfilment_store_id,
     h.order_type,
     h.customer_id,
     h.order_status,
