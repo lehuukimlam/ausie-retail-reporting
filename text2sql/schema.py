@@ -120,8 +120,11 @@ def build_schema_prompt(con: duckdb.DuckDBPyConnection | None = None) -> str:
 
     parts = [
         "You are helping with Australian retail sales reporting.",
-        "Write DuckDB SQL only. Use ONLY these tables in schema main_gold.",
-        "Prefer joins from fact_sales to dimensions. Do not invent tables or columns.",
+        "Write DuckDB SQL only. Use ONLY these tables in schema main_gold "
+        f"({', '.join(GOLD_TABLES)}).",
+        "Qualify tables as main_gold.<table>. Prefer joins from fact_sales to dimensions.",
+        "Do not invent tables or columns. Do not query bronze, silver, raw, or information_schema.",
+        "Do not use read_csv / read_text / file functions. Do not touch .env or secrets.",
         "Do not run DDL or change data (no INSERT/UPDATE/DELETE/DROP/ALTER/COPY).",
         "",
         BUSINESS_RULES,

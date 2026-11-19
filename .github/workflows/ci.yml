@@ -63,3 +63,6 @@ jobs:
           sqlfluff lint dbt_model/models \
             --config .sqlfluff \
             --disable-progress-bar
+
+      - name: text2sql safety checks (no Gemini)
+        run: python -m text2sql.test_safety

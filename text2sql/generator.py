@@ -20,6 +20,7 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 
+from text2sql.pii import mask_pii
 from text2sql.schema import build_schema_prompt
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -55,11 +56,15 @@ def generate_sql(question: str) -> str:
 
     from google import genai
 
+    # Never send cleartext emails/phones in the user question to the model.
+    safe_question = mask_pii(question.strip())
+
     schema = build_schema_prompt()
     prompt = (
         f"{schema}\n"
         "Return ONLY one DuckDB SQL SELECT query. No explanation.\n"
-        f"Question: {question}\n"
+        "Do not read files, .env, or non-gold schemas.\n"
+        f"Question: {safe_question}\n"
     )
 
     client = genai.Client(api_key=api_key)
