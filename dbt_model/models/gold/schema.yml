@@ -364,7 +364,10 @@ models:
               to: ref('dim_date')
               field: date_key
       - name: location_key
-        description: Store / fulfilment location key.
+        description: >
+          Reporting location key. Offline = till store; online = dim_location
+          ONLINE row (not the fulfilment warehouse store). Prefer fact.channel
+          for store-vs-online splits.
         data_type: bigint
         constraints:
           - type: not_null

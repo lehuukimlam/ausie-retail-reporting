@@ -7,6 +7,8 @@
   - qty negative on returns; original_online_order_line_id links to sale line.
   - product_version_id = point-in-time catalog version.
   - Pull business_date_local, customer_id, order_type from silver_online_order_header.
+  - fulfilment_store_id kept for ops/timezone context — fact_sales location for
+    online channel uses dim_location ONLINE, not this fulfilment store.
   - No CRM person names on the line — only IDs.
 */
 select
@@ -22,7 +24,7 @@ select
     l.line_total_inc_gst,
     (l.line_total_inc_gst - l.gst_amount) as line_total_ex_gst,
     h.business_date_local,
-    h.fulfilment_store_id as store_id,
+    h.fulfilment_store_id,
     h.order_type,
     h.customer_id,
     h.order_status,
