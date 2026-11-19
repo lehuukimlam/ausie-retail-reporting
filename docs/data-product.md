@@ -121,7 +121,7 @@ Trust / freshness: [data-governance.md](./data-governance.md).
 |-------|------|
 | Streamlit | Simple browser form (question, suggestions, results table) |
 | Gemini | Drafts one SQL statement from the gold schema description |
-| Python executor | Allows **read-only SELECT** on **`main_gold` only**, then runs it on DuckDB |
+| Python executor | Parses SQL (DuckDB AST) and allows only **approved `main_gold` tables**; blocks file/`.env` reads; masks email/phone in the question before Gemini |
 | Result | Table on screen (optional “Show SQL”) |
 
 Stakeholders should treat Power BI as the **agreed** view. Ask-your-data is for exploration on the **same** gold layer — not a second source of truth.

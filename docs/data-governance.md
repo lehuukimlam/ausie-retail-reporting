@@ -33,7 +33,7 @@ This portfolio uses **synthetic** retail data. Stakeholder roles above are the i
 | **Same definitions everywhere** | Revenue / returns / channel / category mean the same in docs, PBI, and chat | Manual + docs | [Glossary](./data-understanding.md#5-business-terms-and-reporting-definitions) |
 | **Required checks before “validated” refresh** | Gold dbt tests must pass on the normal pipeline path before export | Implemented | `run_pipeline.py` / `run_incremental.py` |
 | **Do not call skipped-test runs validated** | `--skip-test` is for development only | Manual | Runner flags |
-| **AI is read-only on gold** | No writes; SELECT/`main_gold` only | Implemented | `text2sql/executor.py` |
+| **AI is read-only on gold** | No writes; AST allowlist of gold tables; no silver/raw; no file/`.env` reads; email/phone masked before Gemini | Implemented | `text2sql/executor.py`, `text2sql/pii.py` |
 | **Definition changes are recorded** | If Revenue or Category meaning changes, update glossary, dbt descriptions, AI context, and report labels together | Manual | Git + this docs set |
 | **Governance as code** | Freshness, contracts, business rules, and consumer lineage live in dbt YAML/SQL and fail CI when broken | Implemented | Section 3 below; PR #28 |
 
