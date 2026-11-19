@@ -3,13 +3,12 @@ Pipeline runner: refresh the warehouse and Power BI files in one go.
 
 What this does (in order):
   1. Copy store systems data from MySQL into DuckDB (DLT)
-  2. Rebuild bronze, silver, and gold tables (dbt)
-  3. Run gold + SCD singular tests (dbt test) — stops if checks fail
-  4. Export gold tables to Parquet so Power BI can refresh
+  2. Rebuild bronze/silver (+ gold dims that do not need the customer snapshot)
+  3. dbt snapshot snapshot_customer (warehouse SCD2 — required before dim_customer)
+  4. dbt build gold models + gold/SCD/business tests (or gold run only if --skip-test)
+  5. Export gold tables to Parquet so Power BI can refresh
 
-Note: customer SCD2 history needs `dbt snapshot --select snapshot_customer`
-after silver when CRM attributes change. This runner does not call snapshot yet
-(see synthetic/demo_customer_state_move.py for a full capture loop).
+Order matches CI (exclude customer gold → snapshot → build gold/tests).
 
 When to run:
   Once a day after trading, or earlier if you need a mid-day refresh.
@@ -20,7 +19,7 @@ How to run (venv on, from the project folder):
 
 Optional:
   --skip-ingest   skip MySQL copy (only rebuild models + export)
-  --skip-test     skip quality checks (not recommended)
+  --skip-test     skip quality checks (not recommended) — still runs gold models
   --skip-export   skip Power BI Parquet export
 """
 
@@ -89,18 +88,33 @@ def main() -> None:
     else:
         log("SKIP: MySQL copy")
 
+    # dim_customer / fact_sales need snapshot_customer — same order as CI.
     run_step(
-        "Rebuild bronze, silver, and gold",
-        [dbt, "run", "--profiles-dir", "."],
+        "Rebuild bronze/silver + non-customer gold",
+        [
+            dbt,
+            "run",
+            "--exclude",
+            "dim_customer",
+            "fact_sales",
+            "--profiles-dir",
+            ".",
+        ],
+        cwd=DBT_DIR,
+    )
+
+    run_step(
+        "Snapshot customer SCD2 history",
+        [dbt, "snapshot", "--select", "snapshot_customer", "--profiles-dir", "."],
         cwd=DBT_DIR,
     )
 
     if not args.skip_test:
         run_step(
-            "Run gold quality checks",
+            "Build gold models + gold/SCD/business tests",
             [
                 dbt,
-                "test",
+                "build",
                 "--select",
                 "path:models/gold",
                 "path:tests",
@@ -110,7 +124,12 @@ def main() -> None:
             cwd=DBT_DIR,
         )
     else:
-        log("SKIP: quality checks")
+        log("SKIP: quality checks — gold run only")
+        run_step(
+            "Rebuild gold models (tests skipped)",
+            [dbt, "run", "--select", "path:models/gold", "--profiles-dir", "."],
+            cwd=DBT_DIR,
+        )
 
     if not args.skip_export:
         run_step(

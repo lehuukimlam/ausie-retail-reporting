@@ -153,7 +153,7 @@ These use cases are the stakeholder-facing outcomes of the requirements above.
 | Land data | **DLT** | Copy into the warehouse without changing meaning yet |
 | Warehouse | **DuckDB** | One analytical store for raw → cleaned → reporting |
 | Transform | **dbt** | Bronze (raw) → silver (cleaned) → gold (reporting star) |
-| Orchestration | **Python** (`orchestration/run_pipeline.py`) | One run for ingest, rebuild, test, Power BI export |
+| Orchestration | **Python** (`orchestration/run_pipeline.py`) | Ingest → rebuild → customer snapshot → gold build/tests → Power BI export |
 | Dashboard | **Power BI** | Owner/accountant visuals on gold Parquet |
 | Ask your data | **Text-to-SQL** (Gemini + Streamlit) | Natural-language questions on gold only |
 

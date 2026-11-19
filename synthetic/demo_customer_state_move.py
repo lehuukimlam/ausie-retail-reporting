@@ -16,7 +16,7 @@ How to run (from repo root):
   python synthetic/demo_customer_state_move.py
 
 Notes:
-  - Calls `dbt snapshot` itself (pipeline does not hook snapshot yet).
+  - Calls `dbt snapshot` itself for the mid-demo capture (pipelines also snapshot on each run).
   - Extends dim_date through 2026 so today's post-move sale can join.
   - Idempotent-ish: resets Alice to NSW and removes prior demo sale rows first.
 """
