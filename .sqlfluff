@@ -1,0 +1,26 @@
+# Permissive starter for existing SQL style.
+# Skips line-length / layout / column-order noise (~100+ findings on this repo).
+# Re-enable rules (especially LT05) once models are formatted deliberately.
+# Snapshots use {% snapshot %} — lint models only (see CI + .sqlfluffignore).
+
+[sqlfluff]
+dialect = duckdb
+templater = jinja
+max_line_length = 0
+exclude_rules =
+    LT01,
+    LT02,
+    LT05,
+    LT08,
+    LT12,
+    CP01,
+    CP02,
+    ST01,
+    ST06,
+    JJ01
+
+[sqlfluff:templater:jinja]
+apply_dbt_builtins = true
+
+[sqlfluff:indentation]
+tab_space_size = 4

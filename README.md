@@ -1,5 +1,7 @@
 # ausie-retail-reporting
 
+[![CI](https://github.com/lehuukimlam/ausie-retail-reporting/actions/workflows/ci.yml/badge.svg)](https://github.com/lehuukimlam/ausie-retail-reporting/actions/workflows/ci.yml)
+
 End-to-end Aussie retail medallion pipeline with trusted gold, Power BI for owner/accountant, read-only ask-your-data, and incremental sync for new trading days — demonstrated on synthetic data.
 
 Reporting data platform for a **synthetic mid-size Australian omnichannel specialty retailer**.
@@ -202,11 +204,37 @@ Power BI and text-to-SQL both read **gold**, so figures stay aligned.
 
 ---
 
+## Continuous integration (CI)
+
+GitHub Actions runs on every **pull request** and on **pushes to `main`**.
+
+| Check | What it means |
+|-------|----------------|
+| **Green** | Seeded DuckDB warehouse built; gold + SCD tests passed; SQLFluff (relaxed) passed on models |
+| **Red** | Open the failed job log — usually a broken dbt model/test or a SQL lint finding |
+
+**What CI covers:** dbt transforms and tests on the committed `mysql/seed.sql` fixture (loaded straight into DuckDB — **no MySQL, Windows, or DLT** in Actions). Customer SCD2 needs a `dbt snapshot` step before gold; the workflow does that.
+
+**What CI does not cover:** live MySQL ingest, Power BI export, text-to-SQL, or the Alice state-move demo script. Branch protection (required checks) is optional and set in GitHub repo settings — not by this workflow.
+
+Local mirror of the CI dbt path:
+
+```bash
+python scripts/ci_seed_duckdb.py
+cd dbt_model
+dbt run --exclude dim_customer fact_sales --profiles-dir .
+dbt snapshot --select snapshot_customer --profiles-dir .
+dbt build --select path:models/gold path:tests --profiles-dir .
+```
+
+---
+
 ## Repository layout
 
 | Path | Role |
 |------|------|
 | `mysql/` | Shop-system DDL and seed |
+| `scripts/` | CI helpers (e.g. DuckDB seed without MySQL) |
 | `synthetic/` | Extra trading-day generators for incremental demos |
 | `ingestion/` | DLT MySQL → DuckDB (replace or incremental) |
 | `dbt_model/` | Bronze / silver / gold models and tests |
@@ -214,3 +242,4 @@ Power BI and text-to-SQL both read **gold**, so figures stay aligned.
 | `powerbi/` | Parquet export for Power BI |
 | `text2sql/` | Gold-only text-to-SQL (CLI + Streamlit) |
 | `docs/` | Business-friendly understanding, architecture, transformation, governance, and data-product guides |
+| `.github/workflows/` | CI (dbt + SQLFluff) |
