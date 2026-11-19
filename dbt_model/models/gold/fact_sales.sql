@@ -16,13 +16,21 @@
     (point-in-time as captured by POS/ERP — do not re-pick is_current).
   - customer_key resolved via dim_customer on durable customer_id + sale date in
     half-open [valid_from, valid_to); guests (null customer_id) stay null.
-  - channel: 'offline' for POS, 'online' for web.
+  - channel: 'offline' for POS, 'online' for web (sales channel on the fact).
+  - location_key: POS = till store; online = dim_location ONLINE row (store_code
+    'ONLINE'). Do NOT use fulfilment_store_id as location — that is warehouse/ops
+    context on silver headers, separate from channel reporting.
   - Measures: qty, revenue inc/ex GST, discount inc GST, product_cost_ex_gst (from dim_product).
   - is_return from transaction_type / order_type = RETURN; qty may be negative.
   - Degenerate: source_system, transaction_id, line_id, original_transaction_id.
   - fact_sales_key: POS uses sales_line_id; online uses 1_000_000_000 + line id (no clash).
 */
-with pos as (
+with online_location as (
+    select location_key
+    from {{ ref('dim_location') }}
+    where store_code = 'ONLINE'
+),
+pos as (
     select
         l.sales_line_id as fact_sales_key,
         (year(l.business_date_local) * 10000
@@ -56,7 +64,7 @@ web as (
             + month(l.business_date_local) * 100
             + day(l.business_date_local)) as date_key,
         l.business_date_local,
-        l.store_id as location_key,
+        ol.location_key,
         cast(null as bigint) as staff_key,
         l.product_version_id as product_key,
         l.customer_id,
@@ -75,6 +83,7 @@ web as (
     from {{ ref('silver_online_order_line') }} as l
     inner join {{ ref('silver_online_order_header') }} as h
         on l.online_order_header_id = h.online_order_header_id
+    cross join online_location as ol
 ),
 unioned as (
     select * from pos
