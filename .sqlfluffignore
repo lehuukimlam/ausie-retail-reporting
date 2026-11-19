@@ -1,0 +1,5 @@
+# dbt snapshot Jinja tags need the dbt templater; skip until we adopt it.
+dbt_model/snapshots/
+dbt_model/target/
+dbt_model/logs/
+dbt_model/dbt_packages/
