@@ -12,8 +12,9 @@
   - Names / email / phone / suburb / state_code / postcode / country as-of that version
     (email is cleaned lower/trim from silver via the snapshot).
   - valid_from / valid_to / is_current from dbt_valid_* (dates for reporting joins).
-  - Earliest version per customer: valid_from backdated to created_at (or 1900-01-01)
-    so historical sales before the first snapshot run still resolve.
+  - Earliest version per customer: valid_from fixed to 1900-01-01 (not created_at).
+    Seed / CI often leave created_at null then stamp "today", which would put the
+    window after 2024–2025 sales and leave fact_sales.customer_key null.
   - customer_number can be NULL in source (seed edge case) — still a valid dim row.
   - Fact joins the version valid on business_date_local (half-open window).
 */
@@ -35,7 +36,7 @@ select
             partition by customer_id
             order by dbt_valid_from
         ) = 1
-        then cast(coalesce(created_at, timestamp '1900-01-01') as date)
+        then date '1900-01-01'
         else cast(dbt_valid_from as date)
     end as valid_from,
     cast(dbt_valid_to as date) as valid_to,
