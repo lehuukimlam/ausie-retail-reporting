@@ -7,13 +7,15 @@
     fact_sales.location_key  → dim_location.location_key
     fact_sales.staff_key     → dim_staff.staff_key          (NULL for online)
     fact_sales.product_key   → dim_product.product_key      (product VERSION)
-    fact_sales.customer_key  → dim_customer.customer_key    (NULL for guest)
+    fact_sales.customer_key  → dim_customer.customer_key    (customer VERSION; NULL for guest)
   Logic:
   - UNION of in-store POS lines + online order lines into one conformed fact.
   - Grain: one row per sale/return line (not header).
   - FKs are dim PKs (surrogates), not a snowflake of dim-to-dim links.
   - product_key / staff_key use the VERSION ids already on the silver lines
     (point-in-time as captured by POS/ERP — do not re-pick is_current).
+  - customer_key resolved via dim_customer on durable customer_id + sale date in
+    half-open [valid_from, valid_to); guests (null customer_id) stay null.
   - channel: 'offline' for POS, 'online' for web.
   - Measures: qty, revenue inc/ex GST, discount inc GST, product_cost_ex_gst (from dim_product).
   - is_return from transaction_type / order_type = RETURN; qty may be negative.
@@ -26,10 +28,11 @@ with pos as (
         (year(l.business_date_local) * 10000
             + month(l.business_date_local) * 100
             + day(l.business_date_local)) as date_key,
+        l.business_date_local,
         l.store_id as location_key,
         l.staff_version_id as staff_key,
         l.product_version_id as product_key,
-        l.customer_id as customer_key,
+        l.customer_id,
         'offline' as channel,
         'POS' as source_system,
         h.transaction_number as transaction_id,
@@ -52,10 +55,11 @@ web as (
         (year(l.business_date_local) * 10000
             + month(l.business_date_local) * 100
             + day(l.business_date_local)) as date_key,
+        l.business_date_local,
         l.store_id as location_key,
         cast(null as bigint) as staff_key,
         l.product_version_id as product_key,
-        l.customer_id as customer_key,
+        l.customer_id,
         'online' as channel,
         'ECOM' as source_system,
         h.order_number as transaction_id,
@@ -83,7 +87,7 @@ select
     u.location_key,
     u.staff_key,
     u.product_key,
-    u.customer_key,
+    c.customer_key,
     u.channel,
     u.source_system,
     u.transaction_id,
@@ -100,3 +104,7 @@ select
 from unioned as u
 left join {{ ref('dim_product') }} as p
     on u.product_key = p.product_key
+left join {{ ref('dim_customer') }} as c
+    on u.customer_id = c.customer_id
+    and u.business_date_local >= c.valid_from
+    and (c.valid_to is null or u.business_date_local < c.valid_to)

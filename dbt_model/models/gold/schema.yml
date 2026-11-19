@@ -90,16 +90,36 @@ models:
 
   - name: dim_customer
     description: >
-      Loyalty customer. Guests have no customer_key on fact_sales
+      Customer VERSION dimension (warehouse SCD2 from snapshot_customer).
+      One row = one customer attribute version (e.g. state/address as-at that
+      period), not one forever person. Guests have no customer_key on fact_sales
       (blank is allowed — not a fake Guest row).
     columns:
       - name: customer_key
-        description: Customer key. Joins to fact_sales.customer_key when present.
+        description: >
+          Customer version key (snapshot dbt_scd_id). Joins to
+          fact_sales.customer_key when present.
         tests:
           - unique
           - not_null
+      - name: customer_id
+        description: Durable CRM customer id across versions.
+        tests:
+          - not_null
       - name: email
-        description: Customer email as stored for this row.
+        description: Customer email as stored for this version.
+        tests:
+          - not_null
+      - name: valid_from
+        description: >
+          Inclusive start of this version (date). Earliest version is backdated
+          to created_at so historical sales still resolve.
+        tests:
+          - not_null
+      - name: valid_to
+        description: Exclusive end of this version (date); null if current.
+      - name: is_current
+        description: True when valid_to is null (latest open version).
         tests:
           - not_null
 
@@ -143,7 +163,9 @@ models:
               to: ref('dim_staff')
               field: staff_key
       - name: customer_key
-        description: Customer key. NULL for guest checkout.
+        description: >
+          Customer version key valid on the sale trading date. NULL for guest
+          checkout.
         tests:
           - relationships:
               to: ref('dim_customer')
