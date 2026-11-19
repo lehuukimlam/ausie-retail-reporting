@@ -32,17 +32,19 @@ Written for a business reader first. Technical SQL lives under `dbt_model/models
 
 ### Stores (`silver_store` → `dim_location`)
 - Keep the messy state text from the source (e.g. `N.S.W.`, `Victoria`) for audit.
-- Add a standard **state code** (`NSW`, `VIC`, …) so dashboards don’t split one state into three spellings.
+- Add a standard **state code** (`NSW`, `VIC`, …) via shared `au_state_code()` so dashboards don’t split one state into three spellings.
+- **Postcode** is kept as landed — we do **not** build a postcode↔state mismatch flag.
 - Keep **channel** (offline / online) and **timezone** (Sydney vs Perth, etc.) for correct “trading day” logic.
 
 ### Customers (`silver_customer` → snapshot → `dim_customer`)
-- Keep original **email** as landed; also store a **normalised email** (lowercase, trimmed) so `Alice.Smith@Example.COM` matches `alice.smith@example.com`.
+- Keep original **email** as landed; also store a **normalised email** (lowercase, trimmed) so casing differences are comparable.
+- That is **email normalisation**, not CRM **entity matching** — two different `customer_id`s with the same email stay two people.
 - Names left as received (no forced Title Case in v1).
-- Same state-code idea as stores.
+- Same state-code idea as stores (`au_state_code()`).
 - CRM stays **Type-1** in MySQL; **dbt `snapshot_customer`** captures attribute history in the warehouse.
 - **`dim_customer` is version grain** (`valid_from` / `valid_to` / `is_current`). `fact_sales` picks the version valid on the sale’s trading date (half-open window).
 - **Guest checkout** has no customer id — gold keeps that as blank on the sale line (we don’t invent a fake “Guest” customer).
-- Demo: `python synthetic/demo_customer_state_move.py` (Alice NSW→VIC). Pipeline does **not** run `dbt snapshot` yet — run it after silver when CRM attributes change.
+- Demo: `python synthetic/demo_customer_state_move.py` (Alice NSW→VIC). Local pipeline runners do **not** call `dbt snapshot` yet — run it after silver when CRM attributes change (CI does run the snapshot before gold).
 
 ### Staff (`silver_staff` → `dim_staff`)
 - People **change role / store over time**. OLTP already stores **versions** (old role closed, new role opened).
@@ -62,7 +64,7 @@ Written for a business reader first. Technical SQL lives under `dbt_model/models
 
 ### Online orders (`silver_online_order_*`)
 - Same GST and date ideas; staff is usually blank (no cashier).
-- Shipping state cleaned to a standard code where possible.
+- Shipping state cleaned to a standard code via `au_state_code()` where possible; shipping postcode passed through (no mismatch flag).
 - Guest orders allowed (no customer id).
 
 ---
@@ -98,6 +100,7 @@ Configured in `dbt_model/models/gold/schema.yml`:
 | **Singular SCD2 tests** (`tests/assert_dim_*`) | No overlapping validity windows; exactly one `is_current` row per customer (plus product/staff overlap checks). |
 | **Business-rule tests** | GST identity; returns negative qty; unit cost not null — detail in [governance as code](./data-governance.md#3-governance-as-code-what-shipped). |
 | **Source freshness / exposures / state macro** | Wired in dbt; explained under [governance as code](./data-governance.md#3-governance-as-code-what-shipped). |
+| **Not tested / not built** | Silver POS retry dedupe; CRM multi-id entity merge; postcode↔state mismatch flags. |
 
 **How to run** (from `dbt_model`, venv on):
 

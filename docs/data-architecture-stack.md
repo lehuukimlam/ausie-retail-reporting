@@ -107,7 +107,7 @@ ausie-retail-reporting/
 | Layer | In this project |
 |-------|-----------------|
 | **Bronze** | Raw landings of MySQL tables into DuckDB, aligned with [bronze schemas](./data-understanding.md#2-bronze-schemas-raw-contracts) |
-| **Silver** | Dedupe helpers, GST both ways, UTC + local business date, customer match, return links, SCD prep |
+| **Silver** | GST both ways, UTC + local business date, email/state normalisation, return links, SCD prep (no silver dedupe pass or postcode mismatch flags) |
 | **Gold** | `dim_date`, `dim_location`, `dim_staff` (versions), `dim_product` (versions), `dim_customer`, `fact_sales` |
 
 MySQL + DLT feed bronze; dbt builds silver and gold; Power BI and text-to-SQL consume gold ([data-product.md](./data-product.md)). Quality and freshness rules: [data-governance.md](./data-governance.md).

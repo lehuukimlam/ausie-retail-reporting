@@ -92,9 +92,9 @@ Real retail feeds are dirty. Source-style data includes problems such as:
 - Guest checkout with no customer id; loyalty duplicates (same email, different casing)
 - Returns as negative lines linked to an original sale (sometimes in another period)
 - Product categories changing mid-year
-- Inconsistent state names/codes and postcode mismatches
+- Inconsistent state names/codes (and postcodes that may not agree with state)
 
-Cleaning and organising that mess is the point of the data solution.
+Cleaning and organising that mess is the point of the data solution. What we **actually** clean today is listed under requirement **R3** (state codes yes; postcode mismatch flags and CRM entity merge — not built).
 
 ### Why a data solution is required
 
@@ -113,7 +113,7 @@ After examining the business context above, the project is required to deliver t
 |---|-------------|----------------|
 | R1 | Represent one Aussie omnichannel retailer (stores + online); architecture sized for ~50 stores / ~8k SKUs / ~24 months, demonstrated on a smaller seed + incremental trading days | Matches the mid-size specialty shape without claiming full volume in the demo seed |
 | R2 | Keep a **raw** layer that preserves messy source-style data | Audit trail; mirrors how POS / ERP / CRM / online actually land |
-| R3 | Provide a **cleaned** layer (dedupe, GST, timezones, late data, customer matching, returns, category history, location codes) | Spreadsheets fail on these; reporting cannot |
+| R3 | Provide a **cleaned** layer (GST helpers, timezones / trading date, email + AU state normalisation, returns, category/staff history, location codes). Demo avoids POS retries via unique `source_event_id`; silver does **not** run a separate dedupe or CRM entity-match / postcode-flag pass | Spreadsheets fail on these; reporting cannot |
 | R4 | Publish a **reporting model**: sales **fact** (revenue, cost, discount, qty, keys) + **dimensions** (staff, location, product, date; customer where known) | Owner/accountant views need facts and dims, not exports |
 | R5 | Make store and online **comparable in one place** | Channel and location decisions need one truth |
 | R6 | Run a **repeatable refresh** (ingest → transform → quality checks → export) | Trust requires a controlled daily-style process |
