@@ -11,6 +11,7 @@ Written for a business reader (owner, accountant, reviewer). Pipeline detail liv
 | [data-architecture-stack.md](./data-architecture-stack.md) | Tools and stages end to end |
 | [data-transformation.md](./data-transformation.md) | Cleaning, tests, refresh limits |
 | [data-governance.md](./data-governance.md) | Trust rules, freshness, failure handling |
+| [scd2-for-business.md](./scd2-for-business.md) | Customer history (SCD2) in plain language |
 
 ---
 
