@@ -311,8 +311,9 @@ models:
         data_type: varchar
       - name: valid_from
         description: >
-          Inclusive start of this version (date). Earliest version is backdated
-          to created_at so historical sales still resolve.
+          Inclusive start of this version (date). Earliest version is fixed to
+          1900-01-01 so historical sales still resolve (created_at is unreliable
+          when seed/CI stamp "today").
         data_type: date
         constraints:
           - type: not_null
@@ -389,10 +390,16 @@ models:
           - relationships:
               to: ref('dim_product')
               field: product_key
+      - name: customer_id
+        description: >
+          Durable CRM customer id from the sale (null for guest). Used with
+          trading date to resolve customer_key; kept for integrity tests.
+        data_type: bigint
       - name: customer_key
         description: >
           Customer version key valid on the sale trading date. NULL for guest
-          checkout.
+          checkout. Singular test assert_fact_sales_customer_key_when_customer_id
+          fails when customer_id is set but this key is null.
         data_type: varchar
         tests:
           - relationships:

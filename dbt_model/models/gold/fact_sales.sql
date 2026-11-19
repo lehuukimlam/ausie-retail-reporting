@@ -87,6 +87,7 @@ select
     u.location_key,
     u.staff_key,
     u.product_key,
+    u.customer_id,
     c.customer_key,
     u.channel,
     u.source_system,
