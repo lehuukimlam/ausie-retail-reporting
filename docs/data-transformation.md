@@ -9,7 +9,7 @@ Written for a business reader first. Technical SQL lives under `dbt_model/models
 | [README](../README.md) | Business context, requirements, use cases |
 | [data-understanding.md](./data-understanding.md) | Bronze shapes, gold ERD, glossary + dictionary |
 | [data-architecture-stack.md](./data-architecture-stack.md) | Tools and stages end to end |
-| [data-governance.md](./data-governance.md) | Trust rules, freshness, failure handling |
+| [data-governance.md](./data-governance.md) | Trust rules, governance as code, freshness, failure handling |
 | [data-product.md](./data-product.md) | Power BI + ask-your-data stakeholders use |
 
 ---
@@ -96,9 +96,8 @@ Configured in `dbt_model/models/gold/schema.yml`:
 | **accepted_values** on `channel` | Only `offline` or `online` — no typos creating a fake third channel. |
 | Nullable `staff_key` / `customer_key` | Online lines may have no staff; guests may have no customer — tests allow blank there. |
 | **Singular SCD2 tests** (`tests/assert_dim_*`) | No overlapping validity windows; exactly one `is_current` row per customer (plus product/staff overlap checks). |
-| **Business-rule tests** | GST identity (`ex + gst ≈ inc`); returns have negative qty; product `unit_cost_ex_gst` not null (no silent 100% margin). |
-| **Source freshness / exposures** | `dbt source freshness` on raw; exposures.yml documents Power BI + Streamlit consumers. |
-| **AU state macro** | `au_state_code()` shared by silver store/customer/staff/online (no copy-paste CASE). |
+| **Business-rule tests** | GST identity; returns negative qty; unit cost not null — detail in [governance as code](./data-governance.md#3-governance-as-code-what-shipped). |
+| **Source freshness / exposures / state macro** | Wired in dbt; explained under [governance as code](./data-governance.md#3-governance-as-code-what-shipped). |
 
 **How to run** (from `dbt_model`, venv on):
 
@@ -180,4 +179,4 @@ Watermark field: **`created_at`** on transactional tables (not trading date, not
 - Power BI reads **exported Parquet** (updated after a green export).  
 - Ask-your-data reads **live DuckDB gold**.  
 
-After a failed test, export may stop while DuckDB already changed. **Manual practice:** leave Streamlit closed during refresh; reopen only after a green run ([governance — freshness](./data-governance.md#3-freshness-as-of)).
+After a failed test, export may stop while DuckDB already changed. **Manual practice:** leave Streamlit closed during refresh; reopen only after a green run ([governance — freshness](./data-governance.md#4-freshness-for-stakeholders-as-of)).

@@ -9,7 +9,7 @@ Written for a business reader first. Technical SQL lives under `dbt_model/models
 | [README](../README.md) | Business context, requirements, use cases |
 | [data-architecture-stack.md](./data-architecture-stack.md) | Tools and stages end to end |
 | [data-transformation.md](./data-transformation.md) | Cleaning and gold in business terms |
-| [data-governance.md](./data-governance.md) | Trust rules, freshness, failure handling |
+| [data-governance.md](./data-governance.md) | Trust rules, governance as code, freshness, failure handling |
 | [data-product.md](./data-product.md) | Power BI + ask-your-data stakeholders use |
 
 ### Layers in plain words

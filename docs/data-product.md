@@ -10,7 +10,7 @@ Written for a business reader (owner, accountant, reviewer). Pipeline detail liv
 | [data-understanding.md](./data-understanding.md) | Glossary + gold dictionary |
 | [data-architecture-stack.md](./data-architecture-stack.md) | Tools and stages end to end |
 | [data-transformation.md](./data-transformation.md) | Cleaning, tests, refresh limits |
-| [data-governance.md](./data-governance.md) | Trust rules, freshness, failure handling |
+| [data-governance.md](./data-governance.md) | Trust rules, governance as code, freshness, failure handling |
 | [scd2-for-business.md](./scd2-for-business.md) | Customer history (SCD2) in plain language |
 
 ---
@@ -155,7 +155,7 @@ If a chat answer and a dashboard card disagree, fix gold (or the measure), not t
 
 ## 6. Quick checklist for a demo
 
-1. Warehouse is current (incremental sync green — tests passed; note freshness per [governance](./data-governance.md#3-freshness-as-of)).  
+1. Warehouse is current (incremental sync green — tests passed; note freshness per [governance](./data-governance.md#4-freshness-for-stakeholders-as-of)).  
 2. Open the Power BI file → **Owner — performance** and **Accountant — money detail** (friendly labels applied).  
 3. Optional: `streamlit run text2sql\app.py` → ask e.g. “Which store had the highest revenue?”  
 4. Point reviewers at glossary + governance + this guide under `docs/`.
