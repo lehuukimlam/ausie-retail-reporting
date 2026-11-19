@@ -4,7 +4,8 @@
   Purpose: Date dimension for fact_sales (star schema). PK = date_key.
   Relationship: one dim_date row → many fact_sales rows (1:M).
   Logic:
-  - Not from MySQL — generate a day spine for 2024-01-01 .. 2025-12-31 (covers seed).
+  - Not from MySQL — generate a day spine for 2024-01-01 .. 2026-12-31
+    (covers seed + customer state-move demo dates).
   - date_key = YYYYMMDD integer (stable, readable surrogate).
   - fiscal_year_au: Australian FY starts July.
       e.g. 2024-06-30 → FY 2024; 2024-07-01 → FY 2025.
@@ -21,7 +22,7 @@ with spine as (
     select cast(d as date) as full_date
     from generate_series(
         date '2024-01-01',
-        date '2025-12-31',
+        date '2026-12-31',
         interval '1 day'
     ) as t(d)
 ),

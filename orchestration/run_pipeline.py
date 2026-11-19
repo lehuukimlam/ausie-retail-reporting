@@ -4,8 +4,12 @@ Pipeline runner: refresh the warehouse and Power BI files in one go.
 What this does (in order):
   1. Copy store systems data from MySQL into DuckDB (DLT)
   2. Rebuild bronze, silver, and gold tables (dbt)
-  3. Run gold quality checks (dbt test) — stops if checks fail
+  3. Run gold + SCD singular tests (dbt test) — stops if checks fail
   4. Export gold tables to Parquet so Power BI can refresh
+
+Note: customer SCD2 history needs `dbt snapshot --select snapshot_customer`
+after silver when CRM attributes change. This runner does not call snapshot yet
+(see synthetic/demo_customer_state_move.py for a full capture loop).
 
 When to run:
   Once a day after trading, or earlier if you need a mid-day refresh.
@@ -99,6 +103,7 @@ def main() -> None:
                 "test",
                 "--select",
                 "path:models/gold",
+                "path:tests",
                 "--profiles-dir",
                 ".",
             ],

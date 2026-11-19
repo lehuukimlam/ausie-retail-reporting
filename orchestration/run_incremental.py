@@ -83,6 +83,7 @@ def main() -> None:
                 "test",
                 "--select",
                 "path:models/gold",
+                "path:tests",
                 "--profiles-dir",
                 ".",
             ],

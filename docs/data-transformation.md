@@ -35,21 +35,24 @@ Written for a business reader first. Technical SQL lives under `dbt_model/models
 - Add a standard **state code** (`NSW`, `VIC`, …) so dashboards don’t split one state into three spellings.
 - Keep **channel** (offline / online) and **timezone** (Sydney vs Perth, etc.) for correct “trading day” logic.
 
-### Customers (`silver_customer` → `dim_customer`)
+### Customers (`silver_customer` → snapshot → `dim_customer`)
 - Keep original **email** as landed; also store a **normalised email** (lowercase, trimmed) so `Alice.Smith@Example.COM` matches `alice.smith@example.com`.
 - Names left as received (no forced Title Case in v1).
 - Same state-code idea as stores.
+- CRM stays **Type-1** in MySQL; **dbt `snapshot_customer`** captures attribute history in the warehouse.
+- **`dim_customer` is version grain** (`valid_from` / `valid_to` / `is_current`). `fact_sales` picks the version valid on the sale’s trading date (half-open window).
 - **Guest checkout** has no customer id — gold keeps that as blank on the sale line (we don’t invent a fake “Guest” customer).
+- Demo: `python synthetic/demo_customer_state_move.py` (Alice NSW→VIC). Pipeline does **not** run `dbt snapshot` yet — run it after silver when CRM attributes change.
 
 ### Staff (`silver_staff` → `dim_staff`)
-- People **change role / store over time**. We keep **versions** (old role closed, new role opened), not one forever-row.
+- People **change role / store over time**. OLTP already stores **versions** (old role closed, new role opened).
 - Email normalised like customers.
-- Sales point at the **version that was true when the sale happened**.
+- Sales use the **staff version id stamped on the ticket** (not a sale-date window re-pick in dbt).
 
 ### Products (`silver_product` → `dim_product`)
-- Products also have **versions** (name / price / category change mid-year).
+- Products also have **versions** in OLTP (name / price / category change mid-year).
 - Product master prices are **ex-GST**; tills often show **inc-GST**. Silver adds both so finance and ops can reconcile.
-- Sales use the **product version on the ticket**, not “whatever is current today.”
+- Sales use the **product version id stamped on the ticket**, not “whatever is current today.”
 
 ### In-store sales (`silver_sales_*`)
 - Receipt money stays **GST-inclusive** as on the till.
@@ -92,6 +95,7 @@ Configured in `dbt_model/models/gold/schema.yml`:
 | **relationships** (fact → dims) | Every sale’s store / product / date (and staff/customer when present) must exist in the dimension. Orphans = broken report joins. |
 | **accepted_values** on `channel` | Only `offline` or `online` — no typos creating a fake third channel. |
 | Nullable `staff_key` / `customer_key` | Online lines may have no staff; guests may have no customer — tests allow blank there. |
+| **Singular SCD2 tests** (`tests/assert_dim_*`) | No overlapping validity windows; exactly one `is_current` row per customer (plus product/staff overlap checks). |
 
 **How to run** (from `dbt_model`, venv on):
 

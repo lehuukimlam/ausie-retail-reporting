@@ -94,6 +94,7 @@ models:
       One row = one customer attribute version (e.g. state/address as-at that
       period), not one forever person. Guests have no customer_key on fact_sales
       (blank is allowed — not a fake Guest row).
+      Singular tests: assert_dim_customer_no_overlap, assert_dim_customer_one_current.
     columns:
       - name: customer_key
         description: >

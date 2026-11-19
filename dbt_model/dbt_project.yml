@@ -3,6 +3,7 @@ version: "1.0.0"
 profile: ausie_retail
 model-paths: ["models"]
 snapshot-paths: ["snapshots"]
+test-paths: ["tests"]
 clean-targets: ["target", "dbt_packages"]
 
 models:
