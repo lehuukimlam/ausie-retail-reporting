@@ -66,6 +66,6 @@ Demo runner (technical): `python synthetic/demo_customer_state_move.py`.
 
 ---
 
-## For technical readers
+## Where it shipped
 
-Implementation landed in PRs [#23](https://github.com/lehuukimlam/ausie-retail-reporting/pull/23) (snapshot), [#24](https://github.com/lehuukimlam/ausie-retail-reporting/pull/24) (gold join), and [#25](https://github.com/lehuukimlam/ausie-retail-reporting/pull/25) (tests & Alice demo). Cleaning and test behaviour: [data-transformation.md](./data-transformation.md).
+GitHub (`lehuukimlam/ausie-retail-reporting`): [PR #23](https://github.com/lehuukimlam/ausie-retail-reporting/pull/23) history capture → [PR #24](https://github.com/lehuukimlam/ausie-retail-reporting/pull/24) sales use the right day → [PR #25](https://github.com/lehuukimlam/ausie-retail-reporting/pull/25) checks & Alice demo.
