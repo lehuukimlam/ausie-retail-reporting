@@ -177,8 +177,9 @@ Staff change over time (name corrections, **role/position**, home store, rating)
 | Late batches | Merge by business key; incremental upsert, not “replace whole history” only |
 | Guest + CRM email dupes | Resolve customer key; allow null for true guests; match emails case-insensitive |
 | Returns | Keep negative qty; link `original_transaction_key` when present |
-| Product name / price / category change | **SCD2** `dim_product`: one row per SKU **version** (`valid_from` / `valid_to` / `is_current`) |
-| Staff role / name / home store / rating change | **SCD2** `dim_staff`: one row per staff **version** (same versioning pattern) |
+| Product name / price / category change | **Source SCD2** → `dim_product`: one row per SKU **version**; fact uses stamped `product_version_id` |
+| Staff role / name / home store change | **Source SCD2** → `dim_staff`: one row per staff **version**; fact uses stamped `staff_version_id` |
+| Customer address / state change | **Warehouse SCD2** via `snapshot_customer` → versioned `dim_customer`; fact joins on sale date ∈ `[valid_from, valid_to)` |
 | Messy state / postcode | Conform to standard AU state code; flag mismatches |
 
 Silver outputs conformed tables (cleaned transactions, cleaned products, resolved customers, stores, staff) — still not the final star names if you prefer, but **keys are stable**.
@@ -189,12 +190,14 @@ Silver outputs conformed tables (cleaned transactions, cleaned products, resolve
 |------------|------------|--------------|
 | `dim_date` | Calendar generator | One day; AU FY attributes optional |
 | `dim_location` | `bronze_store` → silver store | One store/channel location |
-| `dim_staff` | `bronze_staff` (SCD2) | One staff **version** (role/name/store as-at that period) |
-| `dim_product` | ERP product silver (SCD2) | One SKU **version** (name/price/category as-at that period) |
-| `dim_customer` | CRM + online email resolution | One resolved customer (guest unknown) |
+| `dim_staff` | `bronze_staff` (OLTP versions) | One staff **version** (role/name/store as-at that period) |
+| `dim_product` | ERP product silver (OLTP versions) | One SKU **version** (name/price/category as-at that period) |
+| `dim_customer` | `snapshot_customer` (warehouse SCD2) | One customer **attribute version** (state/address as-at that period) |
 | `fact_sales` | POS lines + online lines | **One sale/return line** |
 
-**Point-in-time keys:** when building `fact_sales`, pick `product_key` and `staff_key` for the version where `business_date_local` falls in `[valid_from, valid_to)`. So a sale in March points at the March product price/name and the cashier’s role in March — not “whatever is current today”.
+**Point-in-time keys:**
+- **Product / staff:** `fact_sales` uses the **version ids stamped on the sale** (POS/ERP), which already encode point-in-time.
+- **Customer:** `fact_sales` joins `dim_customer` where `business_date_local` falls in half-open `[valid_from, valid_to)` so a sale before an interstate move keeps the old `state_code`.
 
 `fact_sales` measures (conceptually):
 
@@ -279,14 +282,14 @@ erDiagram
     }
 
     dim_customer {
-        int customer_key PK
-        string customer_id
+        string customer_key PK "version surrogate"
+        int customer_id "durable"
         string email
-        string loyalty_tier
         string state_code
         string postcode
-        timestamp registered_at
-        boolean is_guest_bucket
+        date valid_from
+        date valid_to
+        boolean is_current
     }
 
     fact_sales {
@@ -381,7 +384,7 @@ Authoritative meanings for owner/accountant language. Power BI labels and ask-yo
 | `dim_location` | One store or online location | `store_name`, `store_code`, `state_code`, `channel` |
 | `dim_product` | One **product version** | `sku`, `product_name`, **Category** (`category_name`), brand, costs/prices |
 | `dim_staff` | One **staff version** | Name, role; used for in-store attribution |
-| `dim_customer` | One loyalty customer | Name, email; guests have no key on the fact |
+| `dim_customer` | One **customer version** | Name, email, `state_code`, validity window; guests have no key on the fact |
 
 Trust and refresh rules: [data-governance.md](./data-governance.md).  
 Cleaning and test behaviour: [data-transformation.md](./data-transformation.md).

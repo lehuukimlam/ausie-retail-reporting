@@ -57,17 +57,21 @@ TABLE_NOTES = {
         "Use store_name, store_code, state_code, channel."
     ),
     "dim_product": (
-        "Product VERSION (SCD2), not only current SKU. PK product_key. "
-        "category_name = Category at that version (historical for the sale). "
+        "Product VERSION (source-managed SCD2 in OLTP). PK product_key = product version. "
+        "fact_sales.product_key is the version stamped on the ticket (not re-picked by sale date). "
+        "category_name = Category at that version. "
         "Use product_name, category_name, brand_name, sku."
     ),
     "dim_staff": (
-        "Staff VERSION. PK staff_key. "
+        "Staff VERSION (source-managed SCD2 in OLTP). PK staff_key = staff version. "
+        "fact_sales.staff_key is the version stamped on the ticket. "
         "Use staff_name, role_name. Online sales may have no staff."
     ),
     "dim_customer": (
-        "Loyalty customer. PK customer_key. "
-        "Use customer_name, email, state_code. Guests are null on the fact."
+        "Customer VERSION (warehouse SCD2 from dbt snapshot). PK customer_key is a version id. "
+        "fact_sales.customer_key is the version valid on the sale trading date "
+        "(state_code/address as-at that day). Also has durable customer_id, valid_from, "
+        "valid_to, is_current. Guests are null on the fact."
     ),
 }
 
