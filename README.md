@@ -210,10 +210,10 @@ GitHub Actions runs on every **pull request** and on **pushes to `main`**.
 
 | Check | What it means |
 |-------|----------------|
-| **Green** | Seeded DuckDB warehouse built; gold + SCD tests passed; SQLFluff (relaxed) passed on models |
-| **Red** | Open the failed job log — usually a broken dbt model/test or a SQL lint finding |
+| **Green** | Source freshness OK; seeded DuckDB warehouse built; gold + SCD + business-rule tests passed; SQLFluff (relaxed) passed on models |
+| **Red** | Open the failed job log — usually a broken dbt model/test, stale source freshness, or a SQL lint finding |
 
-**What CI covers:** dbt transforms and tests on the committed `mysql/seed.sql` fixture (loaded straight into DuckDB — **no MySQL, Windows, or DLT** in Actions). Customer SCD2 needs a `dbt snapshot` step before gold; the workflow does that.
+**What CI covers:** dbt transforms and tests on the committed `mysql/seed.sql` fixture (loaded straight into DuckDB — **no MySQL, Windows, or DLT** in Actions). Customer SCD2 needs a `dbt snapshot` step before gold; the workflow does that. CI also runs `dbt source freshness` (seed stamps `created_at` to “now”).
 
 **What CI does not cover:** live MySQL ingest, Power BI export, text-to-SQL, or the Alice state-move demo script. Branch protection (required checks) is optional and set in GitHub repo settings — not by this workflow.
 

@@ -9,7 +9,7 @@ Written for a business reader who wants the stages without diving into every SQL
 | [README](../README.md) | Business context, requirements, use cases |
 | [data-understanding.md](./data-understanding.md) | Bronze shapes, gold ERD, glossary + dictionary |
 | [data-transformation.md](./data-transformation.md) | Cleaning and tests in business terms |
-| [data-governance.md](./data-governance.md) | Trust rules, freshness, failure handling |
+| [data-governance.md](./data-governance.md) | Trust rules, governance as code, freshness, failure handling |
 | [data-product.md](./data-product.md) | What owners and accountants open |
 
 ---

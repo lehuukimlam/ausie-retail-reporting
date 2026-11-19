@@ -3,13 +3,137 @@ version: 2
 sources:
   - name: mysql_oltp
     schema: raw
-    description: DLT landings from MySQL (replace each run for now)
+    description: >
+      DLT landings from MySQL OLTP (or CI seed of mysql/seed.sql into DuckDB raw).
+      Freshness uses created_at — CI seed stamps "now" so source freshness can pass.
+    meta:
+      owner: analyst
+      contains_pii: false
+    freshness:
+      warn_after: {count: 36, period: hour}
+      error_after: {count: 72, period: hour}
+    loaded_at_field: created_at
     tables:
       - name: store
+        description: Store / online location master.
+        meta:
+          owner: analyst
+        columns:
+          - name: store_id
+            description: Store primary key.
+          - name: created_at
+            description: Row create time in OLTP (freshness watermark).
+
       - name: staff
+        description: Staff VERSION rows (SCD2-style in OLTP).
+        meta:
+          owner: analyst
+          contains_pii: true
+        columns:
+          - name: staff_version_id
+          - name: email
+            description: Staff email (synthetic demo PII).
+            meta:
+              contains_pii: true
+            tags: [pii]
+          - name: first_name
+            meta:
+              contains_pii: true
+            tags: [pii]
+          - name: last_name
+            meta:
+              contains_pii: true
+            tags: [pii]
+          - name: created_at
+
       - name: product
+        description: Product VERSION rows (SCD2-style in OLTP).
+        meta:
+          owner: analyst
+        columns:
+          - name: product_version_id
+          - name: created_at
+
       - name: customer
+        description: Loyalty CRM customer (Type-1 in OLTP; history via dbt snapshot).
+        meta:
+          owner: analyst
+          contains_pii: true
+        columns:
+          - name: customer_id
+          - name: email
+            description: Customer email (synthetic demo PII).
+            meta:
+              contains_pii: true
+            tags: [pii]
+          - name: phone
+            meta:
+              contains_pii: true
+            tags: [pii]
+          - name: first_name
+            meta:
+              contains_pii: true
+            tags: [pii]
+          - name: last_name
+            meta:
+              contains_pii: true
+            tags: [pii]
+          - name: address_line_1
+            meta:
+              contains_pii: true
+            tags: [pii]
+          - name: created_at
+          - name: updated_at
+
       - name: sales_header
+        description: In-store POS transaction headers.
+        meta:
+          owner: analyst
+        freshness:
+          warn_after: {count: 24, period: hour}
+          error_after: {count: 48, period: hour}
+        columns:
+          - name: sales_header_id
+          - name: created_at
+
       - name: sales_line
+        description: In-store POS sale/return lines.
+        meta:
+          owner: analyst
+        freshness:
+          warn_after: {count: 24, period: hour}
+          error_after: {count: 48, period: hour}
+        columns:
+          - name: sales_line_id
+          - name: created_at
+
       - name: online_order_header
+        description: E-commerce order headers (guest checkout allowed).
+        meta:
+          owner: analyst
+          contains_pii: true
+        freshness:
+          warn_after: {count: 24, period: hour}
+          error_after: {count: 48, period: hour}
+        columns:
+          - name: online_order_header_id
+          - name: shipping_name
+            meta:
+              contains_pii: true
+            tags: [pii]
+          - name: shipping_address_line_1
+            meta:
+              contains_pii: true
+            tags: [pii]
+          - name: created_at
+
       - name: online_order_line
+        description: E-commerce order/return lines.
+        meta:
+          owner: analyst
+        freshness:
+          warn_after: {count: 24, period: hour}
+          error_after: {count: 48, period: hour}
+        columns:
+          - name: online_order_line_id
+          - name: created_at
