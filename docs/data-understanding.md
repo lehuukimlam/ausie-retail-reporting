@@ -17,7 +17,7 @@ Written for a business reader first. Technical SQL lives under `dbt_model/models
 | Layer | Name | Meaning |
 |-------|------|---------|
 | Raw | **Bronze** | Data as if it came from POS / ERP / CRM / online — messy on purpose |
-| Cleaned | **Silver** | Deduped, GST fixed, timezones fixed, customers matched, history tracked |
+| Cleaned | **Silver** | GST helpers both ways, local→UTC + trading date, email/state normalisation, return links; SCD windows prepared (not a full dedupe or entity-resolution layer) |
 | Reporting | **Gold** | Star schema: one sales **fact** + **dimensions** for dashboards |
 
 ---
@@ -41,7 +41,9 @@ Generators may populate MySQL; **DLT** loads MySQL → DuckDB bronze.
 
 ## 2. Bronze schemas (raw contracts)
 
-Types are logical (what the column means). Implemented in MySQL / DuckDB / dbt.
+Types below are **logical / illustrative** of messy retail extracts (what can go wrong). They are **not** a 1:1 dump of the implemented tables.
+
+**What is implemented:** MySQL OLTP (`mysql/ddl.sql`) → DLT/`raw` → dbt bronze pass-through views under `dbt_model/models/bronze/`. Real columns use names like `state_text`, `postcode_text`, `transaction_number`, `created_at` — not every illustrative field below (e.g. there is no `source_extracted_at` or `store_size_band` column in the live seed).
 
 ### 2.1 `bronze_store`
 
@@ -169,20 +171,20 @@ Staff change over time (name corrections, **role/position**, home store, rating)
 
 ### Bronze → Silver (cleaning)
 
-| Problem in bronze | Silver rule (brief) |
-|-------------------|---------------------|
-| Duplicate `transaction_id` (+ line) | Keep one row (e.g. latest `source_extracted_at`) |
-| POS inc-GST vs ERP ex-GST | Compute ex-GST and inc-GST amounts; store both with clear names |
-| POS local time, no offset | Map `store_code` → timezone; write `txn_ts_utc` + `business_date_local` |
-| Late batches | Merge by business key; incremental upsert, not “replace whole history” only |
-| Guest + CRM email dupes | Resolve customer key; allow null for true guests; match emails case-insensitive |
-| Returns | Keep negative qty; link `original_transaction_key` when present |
-| Product name / price / category change | **Source SCD2** → `dim_product`: one row per SKU **version**; fact uses stamped `product_version_id` |
-| Staff role / name / home store change | **Source SCD2** → `dim_staff`: one row per staff **version**; fact uses stamped `staff_version_id` |
-| Customer address / state change | **Warehouse SCD2** via `snapshot_customer` → versioned `dim_customer`; fact joins on sale date ∈ `[valid_from, valid_to)` |
-| Messy state / postcode | Conform to standard AU state code; flag mismatches |
+| Problem in bronze | What silver / ingest actually does today |
+|-------------------|------------------------------------------|
+| Duplicate POS retry (`transaction_id` / event) | **Not deduped in silver.** Demo OLTP enforces unique `source_event_id`; seed does not inject retries. Retry dedupe remains a known source risk, not a built silver helper. |
+| POS inc-GST vs ERP ex-GST | Compute ex-GST and inc-GST helpers with clear names (line/header totals; product unit prices). |
+| POS local time, no offset | Join store timezone → `business_date_local` + UTC timestamp on headers. |
+| Late / incremental batches | **Ingest**, not silver: DLT incremental merge on `created_at` for facts; dims merge by PK. Silver/gold then rebuild from `raw`. |
+| Guest + CRM email casing | Guests keep **null** `customer_id`. CRM rows stay one row per `customer_id`; silver only **`lower(trim(email))`** (plus `email_raw`). **No** merge of two CRM ids that share an email. |
+| Returns | Keep negative qty; carry original transaction / line ids when present. |
+| Product name / price / category change | **Source SCD2** → `dim_product`: one row per SKU **version**; fact uses stamped `product_version_id`. |
+| Staff role / name / home store change | **Source SCD2** → `dim_staff`: one row per staff **version**; fact uses stamped `staff_version_id`. |
+| Customer address / state change | **Warehouse SCD2** via `snapshot_customer` → versioned `dim_customer`; fact joins on sale date ∈ `[valid_from, valid_to)`. |
+| Messy state / postcode | Conform **state** via shared `au_state_code()` macro. **Postcode** is passed through; **no** postcode↔state mismatch flag. |
 
-Silver outputs conformed tables (cleaned transactions, cleaned products, resolved customers, stores, staff) — still not the final star names if you prefer, but **keys are stable**.
+Silver outputs conformed tables (cleaned transactions, products, customers, stores, staff) with **stable keys** — not a full entity-resolution or dedupe engine.
 
 ### Silver → Gold (facts & dims)
 
@@ -199,14 +201,15 @@ Silver outputs conformed tables (cleaned transactions, cleaned products, resolve
 - **Product / staff:** `fact_sales` uses the **version ids stamped on the sale** (POS/ERP), which already encode point-in-time.
 - **Customer:** `fact_sales` joins `dim_customer` where `business_date_local` falls in half-open `[valid_from, valid_to)` so a sale before an interstate move keeps the old `state_code`.
 
-`fact_sales` measures (conceptually):
+`fact_sales` measures (as built):
 
 - `qty`
 - `revenue_inc_gst` / `revenue_ex_gst`
-- `discount_inc_gst` / `discount_ex_gst`
-- `product_cost_ex_gst` (from the **product version** valid on the business date)
+- `discount_inc_gst` (no separate `discount_ex_gst` column)
+- `gst_amount`, `unit_price_inc_gst`
+- `product_cost_ex_gst` (from the **stamped** `product_key` / product version on the line × qty)
 - FKs: `date_key`, `location_key`, `staff_key`, `product_key`, `customer_key` (nullable)
-- Degenerate / refs: `transaction_id`, `line_id`, `channel`, `is_return`, `original_transaction_id`
+- Degenerate / refs: `transaction_id`, `line_id`, `channel`, `source_system`, `is_return`, `original_transaction_id`
 
 Online rows: `staff_key` null; `location_key` = online location.
 
@@ -247,32 +250,32 @@ erDiagram
         string state_code
         string postcode
         string suburb
-        string store_size_band
-        date opened_date
+        string timezone_name
+        string country_code
         boolean is_active
     }
 
     dim_staff {
-        int staff_key PK
-        string staff_id
+        int staff_key PK "version"
+        int staff_id "durable"
+        string staff_number
+        int home_store_id
         string staff_name
-        string role
-        float rating
-        string home_store_code
-        date hired_date
+        string role_name
+        string email
+        string state_code
         date valid_from
         date valid_to
         boolean is_current
-        boolean is_active
     }
 
     dim_product {
-        int product_key PK
+        int product_key PK "version"
+        int product_id "durable"
         string sku
         string product_name
-        string brand
-        string category
-        string subcategory
+        string brand_name
+        string category_name
         decimal unit_cost_ex_gst
         decimal unit_price_ex_gst
         decimal gst_rate
@@ -298,15 +301,16 @@ erDiagram
         int location_key FK
         int staff_key FK "nullable"
         int product_key FK
-        int customer_key FK "nullable"
+        string customer_key FK "nullable"
         string transaction_id
         string line_id
         string channel
+        string source_system
         decimal qty
         decimal revenue_inc_gst
         decimal revenue_ex_gst
         decimal discount_inc_gst
-        decimal discount_ex_gst
+        decimal gst_amount
         decimal product_cost_ex_gst
         boolean is_return
         string original_transaction_id
