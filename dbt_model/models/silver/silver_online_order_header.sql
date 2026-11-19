@@ -40,25 +40,7 @@ select
     h.shipping_address_line_2,
     h.shipping_suburb,
     h.shipping_state_text,
-    case
-        when upper(trim(replace(replace(coalesce(h.shipping_state_text, ''), '.', ''), ' ', '')))
-            in ('NSW', 'NEWSOUTHWALES') then 'NSW'
-        when upper(trim(replace(replace(coalesce(h.shipping_state_text, ''), '.', ''), ' ', '')))
-            in ('VIC', 'VICTORIA') then 'VIC'
-        when upper(trim(replace(replace(coalesce(h.shipping_state_text, ''), '.', ''), ' ', '')))
-            in ('QLD', 'QUEENSLAND') then 'QLD'
-        when upper(trim(replace(replace(coalesce(h.shipping_state_text, ''), '.', ''), ' ', '')))
-            in ('WA', 'WESTERNAUSTRALIA') then 'WA'
-        when upper(trim(replace(replace(coalesce(h.shipping_state_text, ''), '.', ''), ' ', '')))
-            in ('SA', 'SOUTHAUSTRALIA') then 'SA'
-        when upper(trim(replace(replace(coalesce(h.shipping_state_text, ''), '.', ''), ' ', '')))
-            in ('TAS', 'TASMANIA') then 'TAS'
-        when upper(trim(replace(replace(coalesce(h.shipping_state_text, ''), '.', ''), ' ', '')))
-            in ('NT', 'NORTHERNTERRITORY') then 'NT'
-        when upper(trim(replace(replace(coalesce(h.shipping_state_text, ''), '.', ''), ' ', '')))
-            in ('ACT', 'AUSTRALIANCAPITALTERRITORY') then 'ACT'
-        else null
-    end as shipping_state_code,
+    {{ au_state_code('h.shipping_state_text') }} as shipping_state_code,
     h.shipping_postcode_text,
     h.shipping_country_code,
     st.channel as fulfilment_channel,

@@ -8,6 +8,8 @@ clean-targets: ["target", "dbt_packages"]
 
 models:
   ausie_retail:
+    +meta:
+      owner: analyst
     bronze:
       +schema: bronze
       +materialized: view

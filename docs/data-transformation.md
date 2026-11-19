@@ -96,6 +96,9 @@ Configured in `dbt_model/models/gold/schema.yml`:
 | **accepted_values** on `channel` | Only `offline` or `online` — no typos creating a fake third channel. |
 | Nullable `staff_key` / `customer_key` | Online lines may have no staff; guests may have no customer — tests allow blank there. |
 | **Singular SCD2 tests** (`tests/assert_dim_*`) | No overlapping validity windows; exactly one `is_current` row per customer (plus product/staff overlap checks). |
+| **Business-rule tests** | GST identity (`ex + gst ≈ inc`); returns have negative qty; product `unit_cost_ex_gst` not null (no silent 100% margin). |
+| **Source freshness / exposures** | `dbt source freshness` on raw; exposures.yml documents Power BI + Streamlit consumers. |
+| **AU state macro** | `au_state_code()` shared by silver store/customer/staff/online (no copy-paste CASE). |
 
 **How to run** (from `dbt_model`, venv on):
 

@@ -24,25 +24,7 @@ select
     lower(trim(email)) as email,
     role_name,
     state_text,
-    case
-        when upper(trim(replace(replace(coalesce(state_text, ''), '.', ''), ' ', '')))
-            in ('NSW', 'NEWSOUTHWALES') then 'NSW'
-        when upper(trim(replace(replace(coalesce(state_text, ''), '.', ''), ' ', '')))
-            in ('VIC', 'VICTORIA') then 'VIC'
-        when upper(trim(replace(replace(coalesce(state_text, ''), '.', ''), ' ', '')))
-            in ('QLD', 'QUEENSLAND') then 'QLD'
-        when upper(trim(replace(replace(coalesce(state_text, ''), '.', ''), ' ', '')))
-            in ('WA', 'WESTERNAUSTRALIA') then 'WA'
-        when upper(trim(replace(replace(coalesce(state_text, ''), '.', ''), ' ', '')))
-            in ('SA', 'SOUTHAUSTRALIA') then 'SA'
-        when upper(trim(replace(replace(coalesce(state_text, ''), '.', ''), ' ', '')))
-            in ('TAS', 'TASMANIA') then 'TAS'
-        when upper(trim(replace(replace(coalesce(state_text, ''), '.', ''), ' ', '')))
-            in ('NT', 'NORTHERNTERRITORY') then 'NT'
-        when upper(trim(replace(replace(coalesce(state_text, ''), '.', ''), ' ', '')))
-            in ('ACT', 'AUSTRALIANCAPITALTERRITORY') then 'ACT'
-        else null
-    end as state_code,
+    {{ au_state_code('state_text') }} as state_code,
     effective_from,
     effective_to,
     is_current,

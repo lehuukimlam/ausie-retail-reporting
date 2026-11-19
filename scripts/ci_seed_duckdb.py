@@ -123,7 +123,8 @@ def main() -> None:
         n = con.execute(f"select count(*) from raw.{table}").fetchone()[0]
         print(f"raw.{table}: {n} rows", flush=True)
 
-    # Seed omits created_at / updated_at on many inserts
+    # Seed omits created_at / updated_at on many inserts.
+    # Stamp "now" so `dbt source freshness` can pass in CI (static 2024 dates would always fail).
     fill = [
         ("store", ["created_at", "updated_at"]),
         ("staff", ["created_at"]),
@@ -136,9 +137,7 @@ def main() -> None:
     ]
     for table, cols in fill:
         for col in cols:
-            con.execute(
-                f"update raw.{table} set {col} = timestamp '2024-01-01' where {col} is null"
-            )
+            con.execute(f"update raw.{table} set {col} = current_timestamp")
 
     con.close()
     print(f"Wrote {DUCKDB_PATH}", flush=True)

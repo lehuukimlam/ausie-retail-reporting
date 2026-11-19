@@ -1,0 +1,46 @@
+version: 2
+
+exposures:
+  - name: power_bi_owner_accountant
+    label: Power BI owner / accountant dashboards
+    type: dashboard
+    maturity: medium
+    url: https://github.com/lehuukimlam/ausie-retail-reporting/tree/main/powerbi
+    description: >
+      Owner and accountant visuals on exported gold Parquet
+      (store, channel, category, revenue/margin). Refresh after a green pipeline export.
+    depends_on:
+      - ref('fact_sales')
+      - ref('dim_date')
+      - ref('dim_location')
+      - ref('dim_product')
+      - ref('dim_staff')
+      - ref('dim_customer')
+    owner:
+      name: Analyst (maintainer)
+      email: analyst@example.com
+    meta:
+      consumers: [owner, accountant]
+      load_path: powerbi/export/*.parquet
+
+  - name: streamlit_ask_your_data
+    label: Ask-your-data (Streamlit + Gemini)
+    type: application
+    maturity: medium
+    url: https://github.com/lehuukimlam/ausie-retail-reporting/tree/main/text2sql
+    description: >
+      Read-only natural-language questions over live DuckDB gold (main_gold only).
+      Same definitions as Power BI; not a write path.
+    depends_on:
+      - ref('fact_sales')
+      - ref('dim_date')
+      - ref('dim_location')
+      - ref('dim_product')
+      - ref('dim_staff')
+      - ref('dim_customer')
+    owner:
+      name: Analyst (maintainer)
+      email: analyst@example.com
+    meta:
+      consumers: [analyst, owner]
+      access: read_only_gold

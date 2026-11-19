@@ -100,7 +100,7 @@ select
     u.discount_inc_gst,
     u.gst_amount,
     u.unit_price_inc_gst,
-    round(coalesce(p.unit_cost_ex_gst, 0) * u.qty, 4) as product_cost_ex_gst
+    round(p.unit_cost_ex_gst * u.qty, 4) as product_cost_ex_gst
 from unioned as u
 left join {{ ref('dim_product') }} as p
     on u.product_key = p.product_key

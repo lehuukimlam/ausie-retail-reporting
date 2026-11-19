@@ -39,6 +39,10 @@ jobs:
         working-directory: dbt_model
         run: dbt parse --profiles-dir .
 
+      - name: dbt source freshness
+        working-directory: dbt_model
+        run: dbt source freshness --profiles-dir .
+
       - name: dbt run (bronze/silver + non-customer gold)
         working-directory: dbt_model
         run: dbt run --exclude dim_customer fact_sales --profiles-dir .
@@ -47,7 +51,7 @@ jobs:
         working-directory: dbt_model
         run: dbt snapshot --select snapshot_customer --profiles-dir .
 
-      - name: dbt build (gold models + gold/SCD tests)
+      - name: dbt build (gold models + gold/SCD/business tests)
         working-directory: dbt_model
         run: >
           dbt build

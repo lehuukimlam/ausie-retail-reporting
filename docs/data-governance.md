@@ -42,10 +42,13 @@ This portfolio uses **synthetic** retail data. Stakeholder roles above are the i
 
 There is **no** gold column for warehouse import time (`imported_at` / `loaded_at`).
 
+**In dbt:** source freshness is defined on `mysql_oltp` tables using `created_at` (`dbt source freshness`). CI seeds stamp those timestamps to “now” so the check can pass without MySQL.
+
 Stakeholders should treat freshness as:
 
 1. **Last successful refresh** — when `run_incremental.py` (or full pipeline) finished with **tests passed** and Parquet exported  
 2. **Latest trading date in gold** — max trading date in `fact_sales` / Date dimension  
+3. **Source freshness (engineering)** — `dbt source freshness` warn/error windows on raw landings  
 
 | Claim | OK? |
 |-------|-----|
